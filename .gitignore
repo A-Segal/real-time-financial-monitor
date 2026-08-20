@@ -1,0 +1,20 @@
+# Visual Studio
+.vs/
+**/.vs/
+
+# .NET
+bin/
+obj/
+
+# Visual Studio user files
+*.user
+*.suo
+
+# Rider
+.idea/
+
+# Node
+node_modules/
+
+# Frontend build
+dist/
