@@ -15,15 +15,15 @@ namespace FinancialMonitor.Api.Migrations
                 name: "Transactions",
                 columns: table => new
                 {
-                    transactionId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    amount = table.Column<decimal>(type: "TEXT", nullable: false),
-                    currency = table.Column<string>(type: "TEXT", nullable: false),
-                    status = table.Column<int>(type: "INTEGER", nullable: false),
-                    timestamp = table.Column<DateTime>(type: "TEXT", nullable: false)
+                    TransactionId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Amount = table.Column<decimal>(type: "TEXT", nullable: false),
+                    Currency = table.Column<string>(type: "TEXT", nullable: false),
+                    Status = table.Column<int>(type: "INTEGER", nullable: false),
+                    Timestamp = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Transactions", x => x.transactionId);
+                    table.PrimaryKey("PK_Transactions", x => x.TransactionId);
                 });
         }
 

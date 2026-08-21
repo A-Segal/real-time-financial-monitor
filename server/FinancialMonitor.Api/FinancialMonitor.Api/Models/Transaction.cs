@@ -2,15 +2,15 @@ namespace FinancialMonitor.Api.Models;
 
 public class Transaction
 {
-    public Guid transactionId { get; set; }
+    public Guid TransactionId { get; set; }
 
-    public decimal amount { get; set; }
+    public decimal Amount { get; set; }
 
-    public string currency { get; set; } = string.Empty;
+    public string Currency { get; set; } = string.Empty;
 
-    public TransactionStatus status { get; set; }
+    public TransactionStatus Status { get; set; }
 
-    public DateTime timestamp { get; set; }
+    public DateTime Timestamp { get; set; }
 }
 
 public enum TransactionStatus

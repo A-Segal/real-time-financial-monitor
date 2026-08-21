@@ -19,24 +19,24 @@ namespace FinancialMonitor.Api.Migrations
 
             modelBuilder.Entity("FinancialMonitor.Api.Models.Transaction", b =>
                 {
-                    b.Property<Guid>("transactionId")
+                    b.Property<Guid>("TransactionId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<decimal>("amount")
+                    b.Property<decimal>("Amount")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("currency")
+                    b.Property<string>("Currency")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("status")
+                    b.Property<int>("Status")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTime>("timestamp")
+                    b.Property<DateTime>("Timestamp")
                         .HasColumnType("TEXT");
 
-                    b.HasKey("transactionId");
+                    b.HasKey("TransactionId");
 
                     b.ToTable("Transactions");
                 });

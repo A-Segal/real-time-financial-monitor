@@ -18,6 +18,12 @@ namespace FinancialMonitor.Api.Repositories
             return await _context.Transactions.AsNoTracking().ToListAsync();
         }
 
+        public async Task<Transaction?> GetByIdAsync(Guid transactionId)
+        {
+            return await _context.Transactions.AsNoTracking()
+                .FirstOrDefaultAsync(t => t.TransactionId == transactionId);
+        }
+
         public async Task AddTransactionAsync(Transaction transaction)
         {
             await _context.Transactions.AddAsync(transaction);
@@ -27,11 +33,11 @@ namespace FinancialMonitor.Api.Repositories
         public async Task UpdateTransactionStatusAsync(Guid transactionId, TransactionStatus status)
         {
             var transaction = await _context.Transactions
-                .FirstOrDefaultAsync(t => t.transactionId == transactionId);
+                .FirstOrDefaultAsync(t => t.TransactionId == transactionId);
 
             if (transaction is not null)
             {
-                transaction.status = status;
+                transaction.Status = status;
                 await _context.SaveChangesAsync();
             }
         }

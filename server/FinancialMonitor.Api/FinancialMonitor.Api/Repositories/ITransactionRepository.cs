@@ -6,6 +6,8 @@ namespace FinancialMonitor.Api.Repositories
     {
         Task<IEnumerable<Transaction>> GetAllTransactionsAsync();
 
+        Task<Transaction?> GetByIdAsync(Guid transactionId);
+
         Task AddTransactionAsync(Transaction transaction);
 
         Task UpdateTransactionStatusAsync(Guid transactionId, TransactionStatus status);

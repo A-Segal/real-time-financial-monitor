@@ -1,5 +1,6 @@
 using FinancialMonitor.Api.Data;
 using FinancialMonitor.Api.Repositories;
+using FinancialMonitor.Api.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,6 +11,9 @@ builder.Services.AddControllers();
 
 // Register repository services.
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
+
+// Register service layer.
+builder.Services.AddScoped<ITransactionService, TransactionService>();
 
 // Register Entity Framework Core with SQLite.
 builder.Services.AddDbContext<AppDbContext>(options =>
