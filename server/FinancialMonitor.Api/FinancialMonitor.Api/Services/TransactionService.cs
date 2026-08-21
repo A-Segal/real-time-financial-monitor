@@ -19,11 +19,11 @@ namespace FinancialMonitor.Api.Services
 
             return transactions.Select(t => new TransactionResponse
             {
-                transactionId = t.TransactionId,
-                amount = t.Amount,
-                currency = t.Currency,
-                status = t.Status,
-                timestamp = t.Timestamp
+                TransactionId = t.TransactionId,
+                Amount = t.Amount,
+                Currency = t.Currency,
+                Status = t.Status,
+                Timestamp = t.Timestamp
             });
         }
 
@@ -34,17 +34,17 @@ namespace FinancialMonitor.Api.Services
                 throw new ArgumentNullException(nameof(request));
             }
 
-            if (request.amount <= 0)
+            if (request.Amount <= 0)
             {
                 throw new ArgumentException("Transaction amount must be greater than zero.", nameof(request));
             }
 
-            if (string.IsNullOrWhiteSpace(request.currency))
+            if (string.IsNullOrWhiteSpace(request.Currency))
             {
                 throw new ArgumentException("Currency is required.", nameof(request));
             }
 
-            if (!Enum.IsDefined(typeof(TransactionStatus), request.status))
+            if (!Enum.IsDefined(typeof(TransactionStatus), request.Status))
             {
                 throw new ArgumentException("Invalid transaction status.", nameof(request));
             }
@@ -52,10 +52,10 @@ namespace FinancialMonitor.Api.Services
             var transaction = new Transaction
             {
                 TransactionId = Guid.NewGuid(),
-                Amount = request.amount,
-                Currency = request.currency,
-                Status = request.status,
-                Timestamp = request.timestamp == default ? DateTime.UtcNow : request.timestamp
+                Amount = request.Amount,
+                Currency = request.Currency,
+                Status = request.Status,
+                Timestamp = DateTime.UtcNow
             };
 
             await _transactionRepository.AddTransactionAsync(transaction);
@@ -73,7 +73,7 @@ namespace FinancialMonitor.Api.Services
                 throw new ArgumentNullException(nameof(request));
             }
 
-            if (!Enum.IsDefined(typeof(TransactionStatus), request.status))
+            if (!Enum.IsDefined(typeof(TransactionStatus), request.Status))
             {
                 throw new ArgumentException("Invalid transaction status.", nameof(request));
             }
@@ -85,7 +85,7 @@ namespace FinancialMonitor.Api.Services
                 throw new KeyNotFoundException($"Transaction with ID '{transactionId}' does not exist.");
             }
 
-            await _transactionRepository.UpdateTransactionStatusAsync(transactionId, request.status);
+            await _transactionRepository.UpdateTransactionStatusAsync(transactionId, request.Status);
         }
     }
 }
