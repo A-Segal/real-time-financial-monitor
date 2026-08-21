@@ -2,10 +2,10 @@ using FinancialMonitor.Api.DTOs;
 using FinancialMonitor.Api.Models;
 using FinancialMonitor.Api.Repositories;
 
-namespace FinancialMonitor.Api.Services
+namespace FinancialMonitor.Api.Services;
+
+public class TransactionService : ITransactionService
 {
-    public class TransactionService : ITransactionService
-    {
         private readonly ITransactionRepository _transactionRepository;
 
         public TransactionService(ITransactionRepository transactionRepository)
@@ -17,17 +17,10 @@ namespace FinancialMonitor.Api.Services
         {
             var transactions = await _transactionRepository.GetAllTransactionsAsync();
 
-            return transactions.Select(t => new TransactionResponse
-            {
-                TransactionId = t.TransactionId,
-                Amount = t.Amount,
-                Currency = t.Currency,
-                Status = t.Status,
-                Timestamp = t.Timestamp
-            });
+            return transactions.Select(ToResponse);
         }
 
-        public async Task AddTransactionAsync(CreateTransactionRequest request)
+        public async Task<TransactionResponse> AddTransactionAsync(CreateTransactionRequest request)
         {
             if (request is null)
             {
@@ -59,6 +52,8 @@ namespace FinancialMonitor.Api.Services
             };
 
             await _transactionRepository.AddTransactionAsync(transaction);
+
+            return ToResponse(transaction);
         }
 
         public async Task UpdateTransactionStatusAsync(Guid transactionId, UpdateTransactionStatusRequest request)
@@ -78,14 +73,23 @@ namespace FinancialMonitor.Api.Services
                 throw new ArgumentException("Invalid transaction status.", nameof(request));
             }
 
-            var existing = await _transactionRepository.GetByIdAsync(transactionId);
+            var updated = await _transactionRepository.UpdateTransactionStatusAsync(transactionId, request.Status);
 
-            if (existing is null)
+            if (!updated)
             {
                 throw new KeyNotFoundException($"Transaction with ID '{transactionId}' does not exist.");
             }
-
-            await _transactionRepository.UpdateTransactionStatusAsync(transactionId, request.Status);
         }
-    }
+
+        private static TransactionResponse ToResponse(Transaction transaction)
+        {
+            return new TransactionResponse
+            {
+                TransactionId = transaction.TransactionId,
+                Amount = transaction.Amount,
+                Currency = transaction.Currency,
+                Status = transaction.Status,
+                Timestamp = transaction.Timestamp
+            };
+        }
 }

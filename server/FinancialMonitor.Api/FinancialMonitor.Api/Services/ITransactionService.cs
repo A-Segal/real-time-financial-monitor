@@ -1,14 +1,13 @@
 using FinancialMonitor.Api.DTOs;
 using FinancialMonitor.Api.Models;
 
-namespace FinancialMonitor.Api.Services
+namespace FinancialMonitor.Api.Services;
+
+public interface ITransactionService
 {
-    public interface ITransactionService
-    {
-        Task<IEnumerable<TransactionResponse>> GetAllTransactionsAsync();
+    Task<IEnumerable<TransactionResponse>> GetAllTransactionsAsync();
 
-        Task AddTransactionAsync(CreateTransactionRequest request);
+    Task<TransactionResponse> AddTransactionAsync(CreateTransactionRequest request);
 
-        Task UpdateTransactionStatusAsync(Guid transactionId, UpdateTransactionStatusRequest request);
-    }
+    Task UpdateTransactionStatusAsync(Guid transactionId, UpdateTransactionStatusRequest request);
 }

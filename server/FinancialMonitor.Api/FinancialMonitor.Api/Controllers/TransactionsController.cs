@@ -4,20 +4,21 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace FinancialMonitor.Api.Controllers;
 
-/// <summary>Exposes HTTP endpoints for managing transactions.</summary>
 [ApiController]
 [Route("api/[controller]")]
 public class TransactionsController : ControllerBase
 {
     private readonly ITransactionService _transactionService;
+    private readonly ILogger<TransactionsController> _logger;
 
-    public TransactionsController(ITransactionService transactionService)
+    public TransactionsController(
+        ITransactionService transactionService,
+        ILogger<TransactionsController> logger)
     {
         _transactionService = transactionService;
+        _logger = logger;
     }
 
-    /// <summary>Retrieves all transactions.</summary>
-    /// <returns>200 OK with the list of transactions.</returns>
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<TransactionResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAllTransactions()
@@ -27,9 +28,6 @@ public class TransactionsController : ControllerBase
         return Ok(transactions);
     }
 
-    /// <summary>Creates a new transaction.</summary>
-    /// <param name="request">The transaction payload.</param>
-    /// <returns>201 Created when the transaction is successfully added.</returns>
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -37,20 +35,22 @@ public class TransactionsController : ControllerBase
     {
         try
         {
-            await _transactionService.AddTransactionAsync(request);
+            var created = await _transactionService.AddTransactionAsync(request);
 
-            return StatusCode(StatusCodes.Status201Created);
+            return StatusCode(StatusCodes.Status201Created, created);
         }
         catch (ArgumentException ex)
         {
+            _logger.LogWarning(ex, "Invalid create transaction request: {Message}", ex.Message);
             return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error creating transaction.");
+            throw;
         }
     }
 
-    /// <summary>Updates the status of an existing transaction.</summary>
-    /// <param name="id">The transaction ID.</param>
-    /// <param name="request">The new status payload.</param>
-    /// <returns>204 No Content when the status is successfully updated.</returns>
     [HttpPut("{id:guid}/status")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -67,11 +67,18 @@ public class TransactionsController : ControllerBase
         }
         catch (KeyNotFoundException ex)
         {
+            _logger.LogWarning(ex, "Transaction {TransactionId} not found for status update.", id);
             return NotFound(ex.Message);
         }
         catch (ArgumentException ex)
         {
+            _logger.LogWarning(ex, "Invalid status update request for transaction {TransactionId}: {Message}", id, ex.Message);
             return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error updating status for transaction {TransactionId}.", id);
+            throw;
         }
     }
 }

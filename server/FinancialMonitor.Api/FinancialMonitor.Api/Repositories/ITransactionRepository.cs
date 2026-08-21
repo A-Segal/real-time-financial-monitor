@@ -1,15 +1,12 @@
 using FinancialMonitor.Api.Models;
 
-namespace FinancialMonitor.Api.Repositories
+namespace FinancialMonitor.Api.Repositories;
+
+public interface ITransactionRepository
 {
-    public interface ITransactionRepository
-    {
-        Task<IEnumerable<Transaction>> GetAllTransactionsAsync();
+    Task<IEnumerable<Transaction>> GetAllTransactionsAsync();
 
-        Task<Transaction?> GetByIdAsync(Guid transactionId);
+    Task AddTransactionAsync(Transaction transaction);
 
-        Task AddTransactionAsync(Transaction transaction);
-
-        Task UpdateTransactionStatusAsync(Guid transactionId, TransactionStatus status);
-    }
+    Task<bool> UpdateTransactionStatusAsync(Guid transactionId, TransactionStatus status);
 }
