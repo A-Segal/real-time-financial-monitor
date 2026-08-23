@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchTransactions } from '../api/transactionsApi'
 import { connectToTransactionsHub } from '../api/transactionsHub'
 import type { Transaction } from '../types/transaction'
@@ -15,17 +15,34 @@ export function useTransactions(): UseTransactionsResult {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [attempt, setAttempt] = useState(0)
+  const loadingRef = useRef(true)
+  const pendingCreatedRef = useRef(new Map<string, Transaction>())
 
   useEffect(() => {
     let cancelled = false
 
     async function load() {
+      loadingRef.current = true
       setError(null)
       setIsLoading(true)
 
       try {
         const data = await fetchTransactions()
-        if (!cancelled) setTransactions(data)
+        if (!cancelled) {
+          setTransactions((prev) => {
+            const apiIds = new Set(data.map((txn) => txn.transactionId))
+            const pending = [...pendingCreatedRef.current.values()].filter(
+              (txn) => !apiIds.has(txn.transactionId),
+            )
+            pendingCreatedRef.current.clear()
+            const liveState = prev.filter(
+              (txn) => !apiIds.has(txn.transactionId),
+            )
+            return [...pending, ...data, ...liveState.filter(
+              (txn) => !pending.some((created) => created.transactionId === txn.transactionId),
+            )]
+          })
+        }
       } catch (err) {
         if (!cancelled) {
           setError(
@@ -33,7 +50,10 @@ export function useTransactions(): UseTransactionsResult {
           )
         }
       } finally {
-        if (!cancelled) setIsLoading(false)
+        if (!cancelled) {
+          loadingRef.current = false
+          setIsLoading(false)
+        }
       }
     }
 
@@ -54,6 +74,9 @@ export function useTransactions(): UseTransactionsResult {
         setTransactions((prev) => {
           if (prev.some((txn) => txn.transactionId === incoming.transactionId)) {
             return prev
+          }
+          if (loadingRef.current) {
+            pendingCreatedRef.current.set(incoming.transactionId, incoming)
           }
           return [incoming, ...prev]
         })
