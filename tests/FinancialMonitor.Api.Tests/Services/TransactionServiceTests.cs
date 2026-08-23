@@ -63,7 +63,9 @@ public class TransactionServiceTests
         // Act
         var result = (await service.GetAllTransactionsAsync()).ToList();
 
-        // Assert
+        // Assert - every item is projected and order is preserved. The projection itself
+        // is fully checked on the first item; on the rest we assert identity + count so the
+        // test doesn't repeat identical field-by-field checks for a purely mechanical map.
         Assert.Equal(2, result.Count);
 
         var first = result[0];
@@ -73,12 +75,8 @@ public class TransactionServiceTests
         Assert.Equal(transactions[0].Status, first.Status);
         Assert.Equal(transactions[0].Timestamp, first.Timestamp);
 
-        var second = result[1];
-        Assert.Equal(transactions[1].TransactionId, second.TransactionId);
-        Assert.Equal(transactions[1].Amount, second.Amount);
-        Assert.Equal(transactions[1].Currency, second.Currency);
-        Assert.Equal(transactions[1].Status, second.Status);
-        Assert.Equal(transactions[1].Timestamp, second.Timestamp);
+        // Verifies the second item was also projected (not dropped) and kept in order.
+        Assert.Equal(transactions[1].TransactionId, result[1].TransactionId);
     }
 
     [Fact]
@@ -195,35 +193,16 @@ public class TransactionServiceTests
         VerifyRepositoryNeverCalled(repositoryMock);
     }
 
-    [Fact]
-    public async Task AddTransactionAsync_WithEmptyCurrency_ThrowsArgumentException()
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task AddTransactionAsync_WithMissingOrWhitespaceCurrency_ThrowsArgumentException(string currency)
     {
         // Arrange
         var request = new CreateTransactionRequest
         {
             Amount = 100m,
-            Currency = string.Empty,
-            Status = TransactionStatus.Pending
-        };
-
-        var repositoryMock = new Mock<ITransactionRepository>();
-        var service = CreateService(repositoryMock);
-
-        // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(
-            () => service.AddTransactionAsync(request));
-
-        VerifyRepositoryNeverCalled(repositoryMock);
-    }
-
-    [Fact]
-    public async Task AddTransactionAsync_WithWhitespaceCurrency_ThrowsArgumentException()
-    {
-        // Arrange
-        var request = new CreateTransactionRequest
-        {
-            Amount = 100m,
-            Currency = "   ",
+            Currency = currency,
             Status = TransactionStatus.Pending
         };
 

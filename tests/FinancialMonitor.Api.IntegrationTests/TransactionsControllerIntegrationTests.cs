@@ -119,24 +119,10 @@ public class TransactionsControllerIntegrationTests : IAsyncLifetime
         Assert.NotEqual(default, created.Timestamp);
     }
 
-    [Fact]
-    public async Task AddTransaction_WithNegativeAmount_Returns400()
-    {
-        var request = new ApiTestContracts.CreateTransactionRequestDto
-        {
-            Amount = -10.5m,
-            Currency = "USD",
-            Status = "Pending"
-        };
-
-        var response = await _client.PostAsJsonAsync(ApiTestContracts.BasePath, request);
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-    }
-
     [Theory]
     [InlineData(0)]
     [InlineData(-0.01)]
+    [InlineData(-10.5)]
     public async Task AddTransaction_WithNonPositiveAmount_Returns400(decimal amount)
     {
         var request = new ApiTestContracts.CreateTransactionRequestDto

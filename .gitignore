@@ -26,3 +26,6 @@ dist/
 
 # Test results
 **/TestResults/
+
+# Code coverage reports
+coverage-report/
