@@ -1,12 +1,16 @@
-import type { Transaction } from '../types/transaction'
+import type { Transaction, TransactionStatus } from '../types/transaction'
 import StatusBadge from './StatusBadge'
 
 interface TransactionsTableProps {
   transactions: Transaction[]
+  onUpdateStatus?: (transactionId: string, status: TransactionStatus) => void
 }
+
+const STATUS_OPTIONS: TransactionStatus[] = ['Pending', 'Completed', 'Failed']
 
 export default function TransactionsTable({
   transactions,
+  onUpdateStatus,
 }: TransactionsTableProps) {
   return (
     <section className="transactions" aria-labelledby="transactions-heading">
@@ -26,6 +30,10 @@ export default function TransactionsTable({
                 <th scope="col">Currency</th>
                 <th scope="col">Status</th>
                 <th scope="col">Timestamp</th>
+                {onUpdateStatus &&
+                  transactions.some((txn) => txn.status === 'Pending') && (
+                    <th className="transactions__actions-head">Actions</th>
+                  )}
               </tr>
             </thead>
             <tbody>
@@ -42,6 +50,30 @@ export default function TransactionsTable({
                   <td className="transactions__timestamp">
                     {formatTimestamp(txn.timestamp)}
                   </td>
+                  {onUpdateStatus && txn.status === 'Pending' && (
+                    <td className="transactions__actions">
+                      <label className="transactions__status-picker">
+                        <span className="visually-hidden">Update status</span>
+                        <select
+                          className="transactions__status-select"
+                          value={txn.status}
+                          onChange={(e) =>
+                            onUpdateStatus(
+                              txn.transactionId,
+                              e.target.value as TransactionStatus,
+                            )
+                          }
+                          aria-label={`Update status for ${txn.transactionId}`}
+                        >
+                          {STATUS_OPTIONS.map((s) => (
+                            <option key={s} value={s}>
+                              {s}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

@@ -13,6 +13,12 @@ export class ApiError extends Error {
   }
 }
 
+export interface CreateTransactionInput {
+  amount: number
+  currency: string
+  status: TransactionStatus
+}
+
 export async function fetchTransactions(): Promise<Transaction[]> {
   let response: Response
   try {
@@ -36,6 +42,65 @@ export async function fetchTransactions(): Promise<Transaction[]> {
   } catch {
     throw new ApiError(
       'The server returned an unexpected response that could not be parsed.',
+      response.status,
+    )
+  }
+}
+
+export async function createTransaction(
+  input: CreateTransactionInput,
+): Promise<Transaction> {
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE}/transactions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    })
+  } catch {
+    throw new ApiError(
+      'Unable to reach the server. Please verify the API is running and check your connection.',
+    )
+  }
+
+  if (!response.ok) {
+    throw new ApiError(
+      `Failed to create transaction (HTTP ${response.status}).`,
+      response.status,
+    )
+  }
+
+  try {
+    const data: unknown = await response.json()
+    return normalizeTransaction(data, 0)
+  } catch {
+    throw new ApiError(
+      'The server returned an unexpected response that could not be parsed.',
+      response.status,
+    )
+  }
+}
+
+export async function updateTransactionStatus(
+  transactionId: string,
+  status: TransactionStatus,
+): Promise<void> {
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE}/transactions/${transactionId}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    })
+  } catch {
+    throw new ApiError(
+      'Unable to reach the server. Please verify the API is running and check your connection.',
+    )
+  }
+
+  if (!response.ok) {
+    throw new ApiError(
+      `Failed to update transaction status (HTTP ${response.status}).`,
       response.status,
     )
   }
