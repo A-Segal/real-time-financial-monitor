@@ -34,6 +34,10 @@ export function connectToTransactionsHub(options: {
   connection.on(
     'TransactionStatusUpdated',
     (transactionId: string, status: string) => {
+      if (typeof transactionId !== 'string' || transactionId.length === 0) {
+        throw new Error('Invalid TransactionStatusUpdated payload.')
+      }
+
       onTransactionStatusUpdated({
         transactionId,
         status: normalizeStatus(status),
@@ -65,6 +69,16 @@ function normalizeStatus(status: string): TransactionStatus {
 }
 
 function normalizeCreatedPayload(payload: TransactionCreatedPayload): Transaction {
+  if (
+    typeof payload?.transactionId !== 'string' ||
+    typeof payload.amount !== 'number' ||
+    !Number.isFinite(payload.amount) ||
+    typeof payload.currency !== 'string' ||
+    typeof payload.status !== 'string'
+  ) {
+    throw new Error('Invalid TransactionCreated payload.')
+  }
+
   return {
     transactionId: payload.transactionId,
     amount: payload.amount,
