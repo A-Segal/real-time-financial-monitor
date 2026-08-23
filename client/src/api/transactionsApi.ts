@@ -1,16 +1,8 @@
-import type { Transaction } from '../types/transaction'
+import { isTransactionStatus } from '../types/transaction'
+import type { Transaction, TransactionStatus } from '../types/transaction'
 
-/**
- * Base path for all API calls. The Vite dev server proxies "/api" to the
- * backend (see vite.config.ts), so calls stay same-origin in development
- * and can be served by the backend in production.
- */
 const API_BASE = '/api'
 
-/**
- * Custom error that carries a human-readable message plus, when available,
- * the underlying HTTP status code for debugging.
- */
 export class ApiError extends Error {
   readonly status: number | undefined
 
@@ -21,12 +13,6 @@ export class ApiError extends Error {
   }
 }
 
-/**
- * Fetches all transactions from `GET /api/transactions`.
- *
- * Throws an `ApiError` when the response is not OK or the body cannot be
- * parsed, so callers can distinguish "no data" from "request failed".
- */
 export async function fetchTransactions(): Promise<Transaction[]> {
   let response: Response
   try {
@@ -55,11 +41,6 @@ export async function fetchTransactions(): Promise<Transaction[]> {
   }
 }
 
-/**
- * Validates the parsed JSON has the expected shape and normalizes each entry
- * into a `Transaction`. Rejects malformed payloads instead of silently
- * rendering `undefined` fields.
- */
 function normalizeTransactions(data: unknown): Transaction[] {
   if (!Array.isArray(data)) {
     throw new Error('Expected a JSON array of transactions.')
@@ -94,11 +75,9 @@ function normalizeTransaction(item: unknown, index: number): Transaction {
   }
 }
 
-const VALID_STATUSES = ['Pending', 'Completed', 'Failed'] as const
-
-function normalizeStatus(status: string): Transaction['status'] {
-  if ((VALID_STATUSES as readonly string[]).includes(status)) {
-    return status as Transaction['status']
+function normalizeStatus(status: string): TransactionStatus {
+  if (isTransactionStatus(status)) {
+    return status
   }
   throw new Error(`Unknown transaction status: "${status}".`)
 }

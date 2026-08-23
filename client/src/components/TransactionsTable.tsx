@@ -5,24 +5,6 @@ interface TransactionsTableProps {
   transactions: Transaction[]
 }
 
-/**
- * Formats an ISO timestamp into a compact, human-readable local string.
- */
-function formatTimestamp(iso: string): string {
-  const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return iso
-  return date.toLocaleString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
-
-/**
- * Renders the transaction list as a responsive table.
- */
 export default function TransactionsTable({
   transactions,
 }: TransactionsTableProps) {
@@ -70,9 +52,18 @@ export default function TransactionsTable({
   )
 }
 
-/**
- * Formats an amount with two decimals and the localized grouping separator.
- */
+function formatTimestamp(iso: string): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return iso
+  return date.toLocaleString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 function formatAmount(amount: number): string {
   return new Intl.NumberFormat(undefined, {
     minimumFractionDigits: 2,

@@ -1,6 +1,3 @@
-/**
- * Application header with the product name and dashboard title.
- */
 export default function Header() {
   return (
     <header className="app-header">

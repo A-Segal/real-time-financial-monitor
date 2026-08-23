@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { fetchTransactions } from '../api/transactionsApi'
+import { connectToTransactionsHub } from '../api/transactionsHub'
 import type { Transaction } from '../types/transaction'
 
 interface UseTransactionsResult {
@@ -9,13 +10,6 @@ interface UseTransactionsResult {
   reload: () => void
 }
 
-/**
- * Loads transactions from the API and tracks the request lifecycle.
- *
- * - `isLoading` is true only while the initial request is in flight.
- * - `error` holds a user-facing message when the request fails.
- * - `reload` re-fetches, useful for a retry button.
- */
 export function useTransactions(): UseTransactionsResult {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -49,6 +43,37 @@ export function useTransactions(): UseTransactionsResult {
       cancelled = true
     }
   }, [attempt])
+
+  useEffect(() => {
+    let cancelled = false
+
+    const hub = connectToTransactionsHub({
+      onTransactionCreated: (incoming) => {
+        if (cancelled) return
+
+        setTransactions((prev) => {
+          if (prev.some((txn) => txn.transactionId === incoming.transactionId)) {
+            return prev
+          }
+          return [incoming, ...prev]
+        })
+      },
+      onTransactionStatusUpdated: ({ transactionId, status }) => {
+        if (cancelled) return
+
+        setTransactions((prev) =>
+          prev.map((txn) =>
+            txn.transactionId === transactionId ? { ...txn, status } : txn,
+          ),
+        )
+      },
+    })
+
+    return () => {
+      cancelled = true
+      void hub.teardown()
+    }
+  }, [])
 
   const reload = useCallback(() => setAttempt((n) => n + 1), [])
 

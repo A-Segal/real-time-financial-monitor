@@ -4,9 +4,6 @@ interface SummaryCardProps {
   accent?: 'default' | 'pending' | 'completed' | 'failed'
 }
 
-/**
- * A single stat tile in the dashboard's summary row.
- */
 export default function SummaryCard({
   label,
   value,

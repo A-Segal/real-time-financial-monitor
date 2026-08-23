@@ -1,10 +1,3 @@
-/**
- * Client-side transaction domain types.
- *
- * The shape mirrors the backend `TransactionResponse` DTO so that mock data
- * can later be swapped for real API data without changing the UI components.
- */
-
 export type TransactionStatus = 'Pending' | 'Completed' | 'Failed'
 
 export interface Transaction {
@@ -20,4 +13,8 @@ export interface TransactionTotals {
   pending: number
   completed: number
   failed: number
+}
+
+export function isTransactionStatus(value: string): value is TransactionStatus {
+  return value === 'Pending' || value === 'Completed' || value === 'Failed'
 }
