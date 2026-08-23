@@ -19,3 +19,10 @@ public enum TransactionStatus
     Completed,
     Failed
 }
+
+public enum TransactionUpdateOutcome
+{
+    Updated,
+    NotFound,
+    NotPending
+}

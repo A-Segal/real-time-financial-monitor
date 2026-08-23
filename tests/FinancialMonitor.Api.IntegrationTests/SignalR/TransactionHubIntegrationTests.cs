@@ -136,6 +136,50 @@ public class TransactionHubIntegrationTests : IAsyncLifetime
     }
 
     // ----------------------------------------------------------------------------
+    // Test 3 — Rejected update does not broadcast
+    // ----------------------------------------------------------------------------
+
+    [Fact]
+    public async Task UpdateStatus_OnNonPendingTransaction_DoesNotPushTransactionStatusUpdated()
+    {
+        // Arrange - create a transaction and move it out of Pending via the real API.
+        var createResponse = await _httpClient.PostAsJsonAsync(
+            ApiTestContracts.BasePath,
+            new ApiTestContracts.CreateTransactionRequestDto { Amount = 100m, Currency = "USD", Status = "Pending" });
+        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+
+        var created = await createResponse.Content
+            .ReadFromJsonAsync<ApiTestContracts.TransactionDto>(ApiTestContracts.JsonOptions);
+        Assert.NotNull(created);
+
+        var completeResponse = await _httpClient.PutAsJsonAsync(
+            $"{ApiTestContracts.BasePath}/{created.TransactionId}/status",
+            new ApiTestContracts.UpdateTransactionStatusRequestDto { Status = "Completed" });
+        Assert.Equal(HttpStatusCode.NoContent, completeResponse.StatusCode);
+
+        // Arrange - connect the real SignalR client and register the handler up-front.
+        await using var connection = await CreateConnectedClientAsync();
+
+        var received = new List<(Guid TransactionId, string Status)>();
+        connection.On<Guid, string>("TransactionStatusUpdated", (transactionId, status) =>
+        {
+            received.Add((transactionId, status));
+        });
+
+        // Act - attempt to update a transaction that is no longer Pending; this must be
+        // rejected with 409 and must not emit a SignalR event.
+        var rejectedResponse = await _httpClient.PutAsJsonAsync(
+            $"{ApiTestContracts.BasePath}/{created.TransactionId}/status",
+            new ApiTestContracts.UpdateTransactionStatusRequestDto { Status = "Failed" });
+        Assert.Equal(HttpStatusCode.Conflict, rejectedResponse.StatusCode);
+
+        // Give the wire a moment; no broadcast should ever arrive for the rejected update.
+        await Task.Delay(500);
+
+        Assert.Empty(received);
+    }
+
+    // ----------------------------------------------------------------------------
     // Helpers
     // ----------------------------------------------------------------------------
 

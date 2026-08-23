@@ -55,6 +55,7 @@ public class TransactionsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> UpdateTransactionStatus(
         [FromRoute] Guid id,
         [FromBody] UpdateTransactionStatusRequest request)
@@ -69,6 +70,11 @@ public class TransactionsController : ControllerBase
         {
             _logger.LogWarning(ex, "Transaction {TransactionId} not found for status update.", id);
             return NotFound(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Transaction {TransactionId} is not in a state that allows a status update.", id);
+            return Conflict(ex.Message);
         }
         catch (ArgumentException ex)
         {

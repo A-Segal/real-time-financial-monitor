@@ -152,10 +152,6 @@ public class TransactionServiceTests
             Times.Once);
     }
 
-    // ----------------------------------------------------------------------------
-    // AddTransactionAsync - validation
-    // ----------------------------------------------------------------------------
-
     [Fact]
     public async Task AddTransactionAsync_WithNullRequest_ThrowsArgumentNullException()
     {
@@ -186,7 +182,6 @@ public class TransactionServiceTests
         var repositoryMock = new Mock<ITransactionRepository>();
         var service = CreateService(repositoryMock);
 
-        // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(
             () => service.AddTransactionAsync(request));
 
@@ -253,7 +248,7 @@ public class TransactionServiceTests
 
         var repositoryMock = new Mock<ITransactionRepository>();
         repositoryMock.Setup(r => r.UpdateTransactionStatusAsync(It.IsAny<Guid>(), It.IsAny<TransactionStatus>()))
-            .ReturnsAsync(true);
+            .ReturnsAsync(TransactionUpdateOutcome.Updated);
 
         var hubContext = CreateHubContextMock(out var sentMessages);
 
@@ -346,7 +341,7 @@ public class TransactionServiceTests
 
         var repositoryMock = new Mock<ITransactionRepository>();
         repositoryMock.Setup(r => r.UpdateTransactionStatusAsync(It.IsAny<Guid>(), It.IsAny<TransactionStatus>()))
-            .ReturnsAsync(false);
+            .ReturnsAsync(TransactionUpdateOutcome.NotFound);
 
         var hubContext = CreateHubContextMock(out var sentMessages);
         var service = new TransactionService(repositoryMock.Object, hubContext.Object);
@@ -358,6 +353,38 @@ public class TransactionServiceTests
         repositoryMock.Verify(
             r => r.UpdateTransactionStatusAsync(transactionId, TransactionStatus.Completed),
             Times.Once);
+        Assert.Empty(sentMessages);
+    }
+
+    // ----------------------------------------------------------------------------
+    // UpdateTransactionStatusAsync - non-pending transaction
+    // ----------------------------------------------------------------------------
+
+    [Fact]
+    public async Task UpdateTransactionStatusAsync_WhenTransactionNotPending_ThrowsInvalidOperationExceptionAndDoesNotNotify()
+    {
+        // Arrange
+        var transactionId = Guid.NewGuid();
+        var request = new UpdateTransactionStatusRequest { Status = TransactionStatus.Pending };
+
+        // A transaction that is Completed or Failed cannot be transitioned further; the
+        // repository reports such transactions as NotPending and the service must reject
+        // the change.
+        var repositoryMock = new Mock<ITransactionRepository>();
+        repositoryMock.Setup(r => r.UpdateTransactionStatusAsync(It.IsAny<Guid>(), It.IsAny<TransactionStatus>()))
+            .ReturnsAsync(TransactionUpdateOutcome.NotPending);
+
+        var hubContext = CreateHubContextMock(out var sentMessages);
+        var service = new TransactionService(repositoryMock.Object, hubContext.Object);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.UpdateTransactionStatusAsync(transactionId, request));
+
+        repositoryMock.Verify(
+            r => r.UpdateTransactionStatusAsync(transactionId, request.Status),
+            Times.Once);
+        // No SignalR notification is sent for a rejected update.
         Assert.Empty(sentMessages);
     }
 

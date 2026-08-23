@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "strict": false,
+    "noImplicitAny": false,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": ["node"],
+    "typeRoots": ["../client/node_modules/@types", "../client/node_modules"],
+    "paths": {
+      "vitest": ["../client/node_modules/vitest"],
+      "@testing-library/*": ["../client/node_modules/@testing-library/*"],
+      "react": ["../client/node_modules/@types/react/index.d.ts"],
+      "react/*": ["../client/node_modules/@types/react/*"],
+      "react-dom": ["../client/node_modules/@types/react-dom/index.d.ts"],
+      "react-dom/*": ["../client/node_modules/@types/react-dom/*"],
+      "@playwright/test": ["../client/node_modules/@playwright/test"]
+    }
+  },
+  "include": ["FinancialMonitor.Client.Tests/**/*.ts", "FinancialMonitor.Client.Tests/**/*.tsx", "FinancialMonitor.E2E/**/*.ts"]
+}

@@ -27,18 +27,23 @@ public class TransactionRepository : ITransactionRepository
         await _context.SaveChangesAsync();
     }
 
-    public async Task<bool> UpdateTransactionStatusAsync(Guid transactionId, TransactionStatus status)
+    public async Task<TransactionUpdateOutcome> UpdateTransactionStatusAsync(Guid transactionId, TransactionStatus status)
     {
         var transaction = await _context.Transactions
             .FirstOrDefaultAsync(t => t.TransactionId == transactionId);
 
         if (transaction is null)
         {
-            return false;
+            return TransactionUpdateOutcome.NotFound;
+        }
+
+        if (transaction.Status != TransactionStatus.Pending)
+        {
+            return TransactionUpdateOutcome.NotPending;
         }
 
         transaction.Status = status;
         await _context.SaveChangesAsync();
-        return true;
+        return TransactionUpdateOutcome.Updated;
     }
 }

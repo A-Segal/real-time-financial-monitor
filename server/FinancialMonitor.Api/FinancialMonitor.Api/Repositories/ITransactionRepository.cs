@@ -8,5 +8,5 @@ public interface ITransactionRepository
 
     Task AddTransactionAsync(Transaction transaction);
 
-    Task<bool> UpdateTransactionStatusAsync(Guid transactionId, TransactionStatus status);
+    Task<TransactionUpdateOutcome> UpdateTransactionStatusAsync(Guid transactionId, TransactionStatus status);
 }

@@ -82,11 +82,17 @@ public class TransactionService : ITransactionService
                 throw new ArgumentException("Invalid transaction status.", nameof(request));
             }
 
-            var updated = await _transactionRepository.UpdateTransactionStatusAsync(transactionId, request.Status);
+            var outcome = await _transactionRepository.UpdateTransactionStatusAsync(transactionId, request.Status);
 
-            if (!updated)
+            switch (outcome)
             {
-                throw new KeyNotFoundException($"Transaction with ID '{transactionId}' does not exist.");
+                case TransactionUpdateOutcome.NotFound:
+                    throw new KeyNotFoundException($"Transaction with ID '{transactionId}' does not exist.");
+                case TransactionUpdateOutcome.NotPending:
+                    throw new InvalidOperationException(
+                        $"Transaction with ID '{transactionId}' can only be updated while its status is 'Pending'.");
+                default:
+                    break;
             }
 
             await _hubContext.Clients.All.SendAsync(
@@ -107,7 +113,6 @@ public class TransactionService : ITransactionService
             };
         }
 
-        /// <summary>Builds the SignalR payload with the status sent as a string.</summary>
         private static TransactionCreatedPayload ToCreatedPayload(Transaction transaction)
         {
             return new TransactionCreatedPayload

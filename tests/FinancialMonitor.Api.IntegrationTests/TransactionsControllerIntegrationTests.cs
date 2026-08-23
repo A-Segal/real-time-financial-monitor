@@ -269,24 +269,75 @@ public class TransactionsControllerIntegrationTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task UpdateTransactionStatus_WithCompletedIdempotentUpdate_Returns204()
+    public async Task UpdateTransactionStatus_PendingToFailed_Returns204AndPersistsChange()
     {
-        // Arrange - create then complete.
+        // Arrange - create a transaction and capture its ID.
         var createResponse = await _client.PostAsJsonAsync(
             ApiTestContracts.BasePath,
-            new ApiTestContracts.CreateTransactionRequestDto { Amount = 50m, Currency = "EUR", Status = "Pending" });
+            new ApiTestContracts.CreateTransactionRequestDto { Amount = 100m, Currency = "USD", Status = "Pending" });
         var created = await createResponse.Content
             .ReadFromJsonAsync<ApiTestContracts.TransactionDto>(ApiTestContracts.JsonOptions);
+        Assert.NotNull(created);
 
-        await _client.PutAsJsonAsync(
-            $"{ApiTestContracts.BasePath}/{created!.TransactionId}/status",
-            new ApiTestContracts.UpdateTransactionStatusRequestDto { Status = "Completed" });
-
-        // Act - completing again is idempotent and still succeeds.
-        var second = await _client.PutAsJsonAsync(
+        // Act - transition it to Failed.
+        var updateResponse = await _client.PutAsJsonAsync(
             $"{ApiTestContracts.BasePath}/{created.TransactionId}/status",
-            new ApiTestContracts.UpdateTransactionStatusRequestDto { Status = "Completed" });
+            new ApiTestContracts.UpdateTransactionStatusRequestDto { Status = "Failed" });
 
-        Assert.Equal(HttpStatusCode.NoContent, second.StatusCode);
+        // Assert - 204 No Content.
+        Assert.Equal(HttpStatusCode.NoContent, updateResponse.StatusCode);
+
+        // Assert - the change was really persisted (retrieved via the real pipeline).
+        var getAllResponse = await _client.GetAsync(ApiTestContracts.BasePath);
+        var transactions = await getAllResponse.Content
+            .ReadFromJsonAsync<ApiTestContracts.TransactionDto[]>(ApiTestContracts.JsonOptions);
+
+        Assert.NotNull(transactions);
+        var updated = Assert.Single(transactions);
+        Assert.Equal("Failed", updated.Status);
+    }
+
+    // ----------------------------------------------------------------------------
+    // PUT /api/transactions/{id}/status - Pending-state enforcement
+    // ----------------------------------------------------------------------------
+
+    // A transaction may only be updated while it is Pending; once it has been completed
+    // or has failed, further updates must be rejected with a 409 Conflict.
+
+    [Theory]
+    [InlineData("Completed", "Pending")]  // Completed -> Pending is rejected
+    [InlineData("Completed", "Failed")]   // Completed -> Failed is rejected
+    [InlineData("Failed", "Pending")]     // Failed -> Pending is rejected
+    [InlineData("Failed", "Completed")]   // Failed -> Completed is rejected
+    public async Task UpdateTransactionStatus_FromNonPendingState_Returns409(
+        string initialStatus,
+        string nextStatus)
+    {
+        // Arrange - create a transaction in a non-Pending state, then attempt a follow-up
+        // update. Because the current status is not Pending, the update must be rejected.
+        var createResponse = await _client.PostAsJsonAsync(
+            ApiTestContracts.BasePath,
+            new ApiTestContracts.CreateTransactionRequestDto { Amount = 75m, Currency = "ILS", Status = initialStatus });
+        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+
+        var created = await createResponse.Content
+            .ReadFromJsonAsync<ApiTestContracts.TransactionDto>(ApiTestContracts.JsonOptions);
+        Assert.NotNull(created);
+
+        // Act & Assert - the update is rejected because the current status is not Pending.
+        var response = await _client.PutAsJsonAsync(
+            $"{ApiTestContracts.BasePath}/{created.TransactionId}/status",
+            new ApiTestContracts.UpdateTransactionStatusRequestDto { Status = nextStatus });
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+
+        // Assert - the transaction was not changed by the rejected update.
+        var getAllResponse = await _client.GetAsync(ApiTestContracts.BasePath);
+        var transactions = await getAllResponse.Content
+            .ReadFromJsonAsync<ApiTestContracts.TransactionDto[]>(ApiTestContracts.JsonOptions);
+
+        Assert.NotNull(transactions);
+        var unchanged = Assert.Single(transactions);
+        Assert.Equal(initialStatus, unchanged.Status);
     }
 }
