@@ -31,11 +31,11 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: 'http://localhost:5120',
+        target: 'http://127.0.0.1:5120',
         changeOrigin: true,
       },
       '/hubs': {
-        target: 'http://localhost:5120',
+        target: 'http://127.0.0.1:5120',
         changeOrigin: true,
         ws: true,
       },

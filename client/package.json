@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "cd .. && oxlint client/src tests/FinancialMonitor.Client.Tests",
+    "lint": "cd .. && oxlint client/src tests/FinancialMonitor.Client.Tests tests/FinancialMonitor.E2E",
+    "test:e2e": "playwright test --config ../tests/FinancialMonitor.E2E/playwright.config.ts",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
@@ -26,6 +27,7 @@
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
     "@vitest/coverage-v8": "^4.1.11",
+    "@playwright/test": "^1.55.0",
     "jsdom": "^26.1.0",
     "oxlint": "^1.75.0",
     "typescript": "~6.0.2",

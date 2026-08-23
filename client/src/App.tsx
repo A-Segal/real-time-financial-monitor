@@ -18,6 +18,7 @@ function App() {
   )
 
   const navigate = useCallback((next: AppRoute) => {
+    window.location.hash = `#/${next}`
     setRoute(next)
   }, [])
 
