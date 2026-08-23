@@ -18,3 +18,14 @@ node_modules/
 
 # Frontend build
 dist/
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+
+# Test results
+**/TestResults/
+
+# Code coverage reports
+coverage-report/
