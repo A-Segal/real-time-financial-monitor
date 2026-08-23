@@ -1,16 +1,22 @@
 using FinancialMonitor.Api.DTOs;
+using FinancialMonitor.Api.Hubs;
 using FinancialMonitor.Api.Models;
 using FinancialMonitor.Api.Repositories;
+using Microsoft.AspNetCore.SignalR;
 
 namespace FinancialMonitor.Api.Services;
 
 public class TransactionService : ITransactionService
 {
         private readonly ITransactionRepository _transactionRepository;
+        private readonly IHubContext<TransactionHub> _hubContext;
 
-        public TransactionService(ITransactionRepository transactionRepository)
+        public TransactionService(
+            ITransactionRepository transactionRepository,
+            IHubContext<TransactionHub> hubContext)
         {
             _transactionRepository = transactionRepository;
+            _hubContext = hubContext;
         }
 
         public async Task<IEnumerable<TransactionResponse>> GetAllTransactionsAsync()
@@ -53,7 +59,10 @@ public class TransactionService : ITransactionService
 
             await _transactionRepository.AddTransactionAsync(transaction);
 
-            return ToResponse(transaction);
+            var response = ToResponse(transaction);
+            await _hubContext.Clients.All.SendAsync("TransactionCreated", ToCreatedPayload(transaction));
+
+            return response;
         }
 
         public async Task UpdateTransactionStatusAsync(Guid transactionId, UpdateTransactionStatusRequest request)
@@ -79,6 +88,11 @@ public class TransactionService : ITransactionService
             {
                 throw new KeyNotFoundException($"Transaction with ID '{transactionId}' does not exist.");
             }
+
+            await _hubContext.Clients.All.SendAsync(
+                "TransactionStatusUpdated",
+                transactionId,
+                request.Status.ToString());
         }
 
         private static TransactionResponse ToResponse(Transaction transaction)
@@ -89,6 +103,19 @@ public class TransactionService : ITransactionService
                 Amount = transaction.Amount,
                 Currency = transaction.Currency,
                 Status = transaction.Status,
+                Timestamp = transaction.Timestamp
+            };
+        }
+
+        /// <summary>Builds the SignalR payload with the status sent as a string.</summary>
+        private static TransactionCreatedPayload ToCreatedPayload(Transaction transaction)
+        {
+            return new TransactionCreatedPayload
+            {
+                TransactionId = transaction.TransactionId,
+                Amount = transaction.Amount,
+                Currency = transaction.Currency,
+                Status = transaction.Status.ToString(),
                 Timestamp = transaction.Timestamp
             };
         }
