@@ -33,34 +33,38 @@ export default function TransactionsTable({
       </header>
 
       <div className="transactions__table-wrap">
-        <table className="transactions__table">
-          <thead>
-            <tr>
-              <th scope="col">Transaction ID</th>
-              <th scope="col">Amount</th>
-              <th scope="col">Currency</th>
-              <th scope="col">Status</th>
-              <th scope="col">Timestamp</th>
-            </tr>
-          </thead>
-          <tbody>
-            {transactions.map((txn) => (
-              <tr key={txn.transactionId}>
-                <td className="transactions__id">{txn.transactionId}</td>
-                <td className="transactions__amount">
-                  {formatAmount(txn.amount)}
-                </td>
-                <td>{txn.currency}</td>
-                <td>
-                  <StatusBadge status={txn.status} />
-                </td>
-                <td className="transactions__timestamp">
-                  {formatTimestamp(txn.timestamp)}
-                </td>
+        {transactions.length === 0 ? (
+          <p className="transactions__empty">No transactions found.</p>
+        ) : (
+          <table className="transactions__table">
+            <thead>
+              <tr>
+                <th scope="col">Transaction ID</th>
+                <th scope="col">Amount</th>
+                <th scope="col">Currency</th>
+                <th scope="col">Status</th>
+                <th scope="col">Timestamp</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {transactions.map((txn) => (
+                <tr key={txn.transactionId}>
+                  <td className="transactions__id">{txn.transactionId}</td>
+                  <td className="transactions__amount">
+                    {formatAmount(txn.amount)}
+                  </td>
+                  <td>{txn.currency}</td>
+                  <td>
+                    <StatusBadge status={txn.status} />
+                  </td>
+                  <td className="transactions__timestamp">
+                    {formatTimestamp(txn.timestamp)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </section>
   )

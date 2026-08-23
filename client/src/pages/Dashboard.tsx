@@ -1,14 +1,42 @@
 import Header from '../components/Header'
 import SummaryCard from '../components/SummaryCard'
 import TransactionsTable from '../components/TransactionsTable'
-import { mockTransactions, summarizeTransactions } from '../data/mockTransactions'
+import { useTransactions } from '../hooks/useTransactions'
+import { summarizeTransactions } from '../data/summaries'
 
 /**
  * Main dashboard view. Composes the header, summary cards, and transaction
- * table from the current (mock) data source.
+ * table backed by data loaded from the API.
  */
 export default function Dashboard() {
-  const totals = summarizeTransactions(mockTransactions)
+  const { transactions, isLoading, error, reload } = useTransactions()
+
+  if (isLoading) {
+    return (
+      <div className="dashboard">
+        <Header />
+        <div className="dashboard__status" role="status">
+          Loading transactions…
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="dashboard">
+        <Header />
+        <div className="dashboard__status dashboard__status--error" role="alert">
+          <p>{error}</p>
+          <button type="button" onClick={reload}>
+            Retry
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  const totals = summarizeTransactions(transactions)
 
   return (
     <div className="dashboard">
@@ -28,7 +56,7 @@ export default function Dashboard() {
         <SummaryCard label="Failed" value={totals.failed} accent="failed" />
       </section>
 
-      <TransactionsTable transactions={mockTransactions} />
+      <TransactionsTable transactions={transactions} />
     </div>
   )
 }

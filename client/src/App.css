@@ -74,6 +74,42 @@
   border-top-color: var(--status-failed-text);
 }
 
+/* ---- Dashboard loading / error states ---- */
+.dashboard__status {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-sm);
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 15px;
+}
+
+.dashboard__status--error {
+  border-color: var(--status-failed-border);
+  color: var(--status-failed-text);
+}
+
+.dashboard__status p {
+  margin: 0 0 16px;
+}
+
+.dashboard__status button {
+  font: inherit;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.dashboard__status button:hover {
+  filter: brightness(1.05);
+}
+
 /* ---- Status badges ---- */
 .status-badge {
   display: inline-block;
@@ -171,6 +207,13 @@
 .transactions__timestamp {
   color: var(--text-muted);
   font-size: 14px;
+}
+
+.transactions__empty {
+  margin: 0;
+  padding: 48px 20px;
+  text-align: center;
+  color: var(--text-muted);
 }
 
 /* ---- Responsive ---- */
