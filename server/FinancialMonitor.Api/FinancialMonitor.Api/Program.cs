@@ -2,6 +2,7 @@ using FinancialMonitor.Api.Data;
 using FinancialMonitor.Api.Repositories;
 using FinancialMonitor.Api.Services;
 using Microsoft.EntityFrameworkCore;
+using StackExchange.Redis;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,7 +19,20 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(
         builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddSignalR();
+var redisConnectionString = builder.Configuration["Redis:ConnectionString"];
+
+if (!string.IsNullOrEmpty(redisConnectionString))
+{
+    builder.Services.AddSignalR()
+        .AddStackExchangeRedis(redisConnectionString, redisOptions =>
+        {
+            redisOptions.Configuration.ChannelPrefix = RedisChannel.Literal("FinancialMonitor");
+        });
+}
+else
+{
+    builder.Services.AddSignalR();
+}
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
