@@ -22,6 +22,10 @@ public class TransactionServiceTests
     // depending on an exact value.
     private static readonly TimeSpan TimestampTolerance = TimeSpan.FromSeconds(5);
 
+    // An enum value that is deliberately not one of the defined TransactionStatus values,
+    // used to exercise the service's "invalid status" validation path.
+    private const TransactionStatus InvalidStatus = (TransactionStatus)999;
+
     // ----------------------------------------------------------------------------
     // GetAllTransactionsAsync
     // ----------------------------------------------------------------------------
@@ -78,7 +82,7 @@ public class TransactionServiceTests
     }
 
     [Fact]
-    public async Task GetAllTransactionsAsync_WhenRepositoryReturnsEmpty_ReturnsEmptyCollection()
+    public async Task GetAllTransactionsAsync_OnEmptyRepository_ReturnsEmptyCollectionAndReadsOnce()
     {
         // Arrange
         var repositoryMock = new Mock<ITransactionRepository>();
@@ -90,25 +94,11 @@ public class TransactionServiceTests
         // Act
         var result = await service.GetAllTransactionsAsync();
 
-        // Assert
+        // Assert - an empty source still yields an empty, non-null result...
         Assert.NotNull(result);
         Assert.Empty(result);
-    }
 
-    [Fact]
-    public async Task GetAllTransactionsAsync_Always_CallsRepositoryExactlyOnce()
-    {
-        // Arrange
-        var repositoryMock = new Mock<ITransactionRepository>();
-        repositoryMock.Setup(r => r.GetAllTransactionsAsync())
-            .ReturnsAsync(new List<Transaction>());
-
-        var service = CreateService(repositoryMock);
-
-        // Act
-        await service.GetAllTransactionsAsync();
-
-        // Assert
+        // ...and the repository is read exactly once (no accidental double query).
         repositoryMock.Verify(
             r => r.GetAllTransactionsAsync(),
             Times.Once);
@@ -255,7 +245,7 @@ public class TransactionServiceTests
         {
             Amount = 100m,
             Currency = "USD",
-            Status = (TransactionStatus)999
+            Status = InvalidStatus
         };
 
         var repositoryMock = new Mock<ITransactionRepository>();
@@ -350,7 +340,7 @@ public class TransactionServiceTests
     public async Task UpdateTransactionStatusAsync_WithInvalidEnumStatus_ThrowsArgumentException()
     {
         // Arrange
-        var request = new UpdateTransactionStatusRequest { Status = (TransactionStatus)777 };
+        var request = new UpdateTransactionStatusRequest { Status = InvalidStatus };
 
         var repositoryMock = new Mock<ITransactionRepository>();
         var hubContext = CreateHubContextMock(out var sentMessages);
