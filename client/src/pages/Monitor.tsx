@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import SummaryCard from '../components/SummaryCard'
 import TransactionsTable from '../components/TransactionsTable'
 import SnackbarContainer from '../components/SnackbarContainer'
@@ -7,8 +7,18 @@ import { useTransactions } from '../hooks/useTransactions'
 import { summarizeTransactions } from '../data/summaries'
 import type { Transaction, TransactionStatus } from '../types/transaction'
 
+type StatusFilter = 'all' | TransactionStatus
+
+const FILTER_OPTIONS: { value: StatusFilter; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'Pending', label: 'Pending' },
+  { value: 'Completed', label: 'Completed' },
+  { value: 'Failed', label: 'Failed' },
+]
+
 export default function Monitor() {
   const [newTransactions, setNewTransactions] = useState<Transaction[]>([])
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
 
   const handleNewTransaction = useCallback((txn: Transaction) => {
     setNewTransactions((prev) => [...prev, txn])
@@ -21,6 +31,11 @@ export default function Monitor() {
   const { transactions, setTransactions, isLoading, error, reload } = useTransactions(handleNewTransaction)
   const [updateError, setUpdateError] = useState<string | null>(null)
   const [animatingTransactionId, setAnimatingTransactionId] = useState<string | null>(null)
+
+  const filteredTransactions = useMemo(() => {
+    if (statusFilter === 'all') return transactions
+    return transactions.filter((txn) => txn.status === statusFilter)
+  }, [transactions, statusFilter])
 
   async function handleUpdateStatus(
     transactionId: string,
@@ -103,8 +118,26 @@ export default function Monitor() {
             </p>
           )}
 
+          <div className="monitor-filters">
+            <label className="monitor-filters__label" htmlFor="status-filter">
+              Filter:
+            </label>
+            <select
+              id="status-filter"
+              className="monitor-filters__select"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+            >
+              {FILTER_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <TransactionsTable
-            transactions={transactions}
+            transactions={filteredTransactions}
             animatingTransactionId={animatingTransactionId}
             onUpdateStatus={handleUpdateStatus}
             onAnimationEnd={handleAnimationEnd}
