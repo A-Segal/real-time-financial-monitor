@@ -9,6 +9,7 @@ import type { TransactionStatus } from '../types/transaction'
 export default function Monitor() {
   const { transactions, setTransactions, isLoading, error, reload } = useTransactions()
   const [updateError, setUpdateError] = useState<string | null>(null)
+  const [animatingTransactionId, setAnimatingTransactionId] = useState<string | null>(null)
 
   async function handleUpdateStatus(
     transactionId: string,
@@ -17,18 +18,24 @@ export default function Monitor() {
     setUpdateError(null)
     try {
       await updateTransactionStatus(transactionId, status)
-      // עדכון אופטימי מידי בצד הלקוח — ה-SignalR event יגבה אותו
+      // Update the transaction optimistically
       setTransactions((prev) =>
         prev.map((txn) =>
           txn.transactionId === transactionId ? { ...txn, status } : txn,
         ),
       )
+      // Trigger the animation
+      setAnimatingTransactionId(transactionId)
     } catch (err) {
       setUpdateError(
         err instanceof Error ? err.message : 'Failed to update transaction.',
       )
     }
   }
+
+  const handleAnimationEnd = useCallback(() => {
+    setAnimatingTransactionId(null)
+  }, [])
 
   return (
     <div className="dashboard">
@@ -87,7 +94,9 @@ export default function Monitor() {
 
           <TransactionsTable
             transactions={transactions}
+            animatingTransactionId={animatingTransactionId}
             onUpdateStatus={handleUpdateStatus}
+            onAnimationEnd={handleAnimationEnd}
           />
         </>
       )}

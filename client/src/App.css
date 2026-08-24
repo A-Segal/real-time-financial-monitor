@@ -144,15 +144,34 @@
 }
 
 .status-badge {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   padding: 3px 10px;
   border-radius: 999px;
   font-size: 13px;
   font-weight: 600;
   border: 1px solid transparent;
   white-space: nowrap;
+  transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
+.status-badge__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  font-size: 13px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.status-badge__label {
+  transition: opacity 0.25s ease;
+}
+
+/* ── Status colour variants ── */
 .status-badge--pending {
   background: var(--status-pending-bg);
   color: var(--status-pending-text);
@@ -169,6 +188,71 @@
   background: var(--status-failed-bg);
   color: var(--status-failed-text);
   border-color: var(--status-failed-border);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ANIMATION: PENDING › COMPLETED / FAILED
+   ══════════════════════════════════════════════════════════════ */
+
+@keyframes badge-shrink {
+  0%   { transform: scale(1); opacity: 1; }
+  50%  { transform: scale(0.85); opacity: 0.7; }
+  100% { transform: scale(0.75); opacity: 0.4; }
+}
+
+@keyframes badge-fade-out {
+  0%   { transform: scale(0.75); opacity: 0.4; }
+  100% { transform: scale(0.6); opacity: 0; }
+}
+
+@keyframes icon-pop-in {
+  0%   { transform: scale(0); opacity: 0; }
+  50%  { transform: scale(1.35); opacity: 1; }
+  75%  { transform: scale(0.9); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes label-fade-in {
+  0%   { opacity: 0; transform: translateY(3px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Animation applied when animating class is active ── */
+.status-badge--animating {
+  animation:
+    badge-shrink 250ms ease-in forwards,
+    badge-fade-out 200ms ease-in 250ms forwards;
+}
+
+/* The icon gets a delayed pop-in */
+.status-badge--animating .status-badge__icon {
+  animation: icon-pop-in 450ms cubic-bezier(0.34, 1.56, 0.64, 1) 450ms forwards;
+  opacity: 0;
+  transform: scale(0);
+}
+
+/* The label fades in after the icon pops */
+.status-badge--animating .status-badge__label {
+  animation: label-fade-in 250ms ease-out 750ms forwards;
+  opacity: 0;
+}
+
+/* ── Respect reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .status-badge {
+    transition: none;
+  }
+
+  .status-badge--animating {
+    animation: none;
+  }
+
+  .status-badge--animating .status-badge__icon,
+  .status-badge--animating .status-badge__label {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .transactions {

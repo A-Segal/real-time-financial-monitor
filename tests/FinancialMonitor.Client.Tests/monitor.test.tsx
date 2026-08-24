@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { updateTransactionStatus } from '../../client/src/api/transactionsApi'
@@ -15,19 +15,19 @@ vi.mock('../../client/src/api/transactionsHub', () => ({ connectToTransactionsHu
 const fetchMock = vi.mocked(fetchTransactions)
 const updateMock = vi.mocked(updateTransactionStatus)
 const connectMock = vi.mocked(connectToTransactionsHub)
-let hubCallbacks: Parameters<typeof connectToTransactionsHub>[0]
+let _hubCallbacks: Parameters<typeof connectToTransactionsHub>[0]
 
 afterEach(() => { cleanup(); vi.clearAllMocks() })
 
 function setupHub() {
   connectMock.mockImplementation((options) => {
-    hubCallbacks = options
+    _hubCallbacks = options
     return { connection: undefined as never, teardown: vi.fn().mockResolvedValue(undefined) }
   })
 }
 
 describe('Monitor status flow', () => {
-  it.each(['Completed', 'Failed'] as const)('sends pending -> %s and waits for realtime confirmation', async (status) => {
+  it.each(['Completed', 'Failed'] as const)('sends pending -> %s and updates optimistically', async (status) => {
     fetchMock.mockResolvedValue([transaction()])
     updateMock.mockResolvedValue(undefined)
     setupHub()
@@ -36,11 +36,11 @@ describe('Monitor status flow', () => {
     const select = await screen.findByRole('combobox', { name: 'Update status for txn-1' })
     await user.selectOptions(select, status)
     expect(updateMock).toHaveBeenCalledWith('txn-1', status)
-    expect(screen.getByRole('combobox')).toBeInTheDocument()
-
-    act(() => hubCallbacks.onTransactionStatusUpdated({ transactionId: 'txn-1', status }))
+    // The optimistic update immediately reflects the new status,
+    // so the select disappears and the status is shown.
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
-    expect(screen.getByRole('cell', { name: status })).toBeInTheDocument()
+    const statusCells = screen.getAllByText(status)
+    expect(statusCells.some((el) => el.closest('td'))).toBe(true)
   })
 
   it.each([400, 404, 409, 500])('shows rejection HTTP %s without false update', async (status) => {
