@@ -45,10 +45,22 @@ public sealed class TestApplicationFactory : WebApplicationFactory<Program>
     {
         _connection = new SqliteConnection("Data Source=:memory:");
         _connection.Open();
+
+        // Match the production busy_timeout (5 seconds, see Program.cs).
+        // Without this PRAGMA, concurrent reads fail immediately with
+        // SQLITE_BUSY instead of waiting for the write to complete.
+        using var cmd = _connection.CreateCommand();
+        cmd.CommandText = "PRAGMA busy_timeout=5000;";
+        cmd.ExecuteNonQuery();
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        // Override the connection string to point at our in-memory SQLite database.
+        // Program.cs opens this connection and applies the WAL/busy PRAGMAs before EF
+        // Core registers, so we must replace it at the config level too.
+        builder.UseSetting("ConnectionStrings:DefaultConnection", "Data Source=:memory:");
+
         // Ensure the Redis backplane is NOT configured during these tests (no Redis
         // dependency for the standard integration tests). The web host defaults to the
         // "Development" environment which loads appsettings.Development.json, but that
