@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import SummaryCard from '../components/SummaryCard'
 import TransactionsTable from '../components/TransactionsTable'
 import { updateTransactionStatus } from '../api/transactionsApi'
@@ -7,7 +7,7 @@ import { summarizeTransactions } from '../data/summaries'
 import type { TransactionStatus } from '../types/transaction'
 
 export default function Monitor() {
-  const { transactions, isLoading, error, reload } = useTransactions()
+  const { transactions, setTransactions, isLoading, error, reload } = useTransactions()
   const [updateError, setUpdateError] = useState<string | null>(null)
 
   async function handleUpdateStatus(
@@ -17,6 +17,12 @@ export default function Monitor() {
     setUpdateError(null)
     try {
       await updateTransactionStatus(transactionId, status)
+      // עדכון אופטימי מידי בצד הלקוח — ה-SignalR event יגבה אותו
+      setTransactions((prev) =>
+        prev.map((txn) =>
+          txn.transactionId === transactionId ? { ...txn, status } : txn,
+        ),
+      )
     } catch (err) {
       setUpdateError(
         err instanceof Error ? err.message : 'Failed to update transaction.',

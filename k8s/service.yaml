@@ -1,0 +1,37 @@
+# ---------------------------------------------------------------------------
+# Backend Service — Real-Time Financial Monitor
+#
+# Provides a stable internal DNS name ("financial-monitor-backend") for the
+# NGINX load balancer (backend-lb) to discover backend Pods.
+#
+# Service type: ClusterIP (internal only).
+#
+# The NGINX load balancer (deployed separately) routes traffic to this Service:
+#   - /api/     → Round Robin
+#   - /hubs/   → Sticky sessions via $cookie_signalr_id consistent hash
+#
+# Clients (frontend SPA) do NOT connect directly to this Service — they connect
+# to the NGINX load balancer, which then distributes to the backend Pods.
+# This preserves the existing architecture where the load balancer handles
+# SignalR session affinity.
+# ---------------------------------------------------------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: financial-monitor-backend
+  labels:
+    app: financial-monitor
+    component: backend
+spec:
+  # ClusterIP makes the backend reachable only within the cluster.
+  # The NGINX load balancer (backend-lb) accesses backend Pods via this
+  # Service DNS name.
+  type: ClusterIP
+  selector:
+    app: financial-monitor
+    component: backend
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: 8080

@@ -1,0 +1,116 @@
+# ---------------------------------------------------------------------------
+# Backend Deployment — Real-Time Financial Monitor
+#
+# Deploys the ASP.NET Core 8 backend with 3 replicas.
+# Each replica:
+#   - Listens on container port 8080 (ASPNETCORE_URLS=http://0.0.0.0:8080)
+#   - Stores SQLite data in an emptyDir (ephemeral, per-pod)
+#   - Connects to a shared Redis for the SignalR backplane
+#
+# The existing NGINX load balancer (backend-lb) handles:
+#   - /api/     → Round Robin across all replicas
+#   - /hubs/   → Sticky sessions via $cookie_signalr_id consistent hash
+#
+# Kubernetes Service load balancing does NOT replace the NGINX sticky-session
+# routing — SignalR WebSocket upgrade requires session affinity, which is
+# provided by the NGINX consistent-hash layer (not by this Deployment).
+#
+# Prerequisites (not created here):
+#   - Redis Service named "redis" in the same namespace
+#   - Docker image: financial-monitor-backend:latest (built from server/Dockerfile)
+# ---------------------------------------------------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: financial-monitor-backend
+  labels:
+    app: financial-monitor
+    component: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: financial-monitor
+      component: backend
+  template:
+    metadata:
+      labels:
+        app: financial-monitor
+        component: backend
+    spec:
+      # Security: run as non-root user (matching the Docker entrypoint behavior)
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: backend
+          image: financial-monitor-backend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          env:
+            # --- ASP.NET Core configuration ---
+            - name: ASPNETCORE_ENVIRONMENT
+              value: "Docker"
+            - name: ASPNETCORE_URLS
+              value: "http://0.0.0.0:8080"
+
+            # --- Redis connection (SignalR backplane) ---
+            # Connects to the Redis Service at "redis:6379" in the same namespace.
+            # This matches the Docker Compose configuration where
+            # Redis__ConnectionString=redis:6379.
+            - name: Redis__ConnectionString
+              value: "redis:6379"
+
+          # --- SQLite ephemeral storage ---
+          # Each pod gets its own emptyDir for the SQLite database.
+          # In production, replace SQLite with a shared database (PostgreSQL, SQL Server).
+          volumeMounts:
+            - name: sqldata
+              mountPath: /app/data
+
+          # --- Liveness probe ---
+          # Checks if the application process is alive and responding.
+          # The /health endpoint returns 200 with {"status":"Healthy","instance":"<hostname>"}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # --- Readiness probe ---
+          # Checks if the pod is ready to accept traffic.
+          # Uses the same /health endpoint.
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 2
+
+          # --- Resource requests and limits ---
+          # Based on a typical ASP.NET Core 8 API workload.  These values are
+          # conservative estimates for an assessment/demo deployment.
+          # Adjust for production based on actual load testing.
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+
+      # --- Ephemeral SQLite storage ---
+      # Each pod has an isolated emptyDir for its SQLite database file.
+      # Data is lost when the pod is restarted — acceptable for demo/testing.
+      volumes:
+        - name: sqldata
+          emptyDir: {}
