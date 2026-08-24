@@ -510,6 +510,152 @@
   border: 0;
 }
 
+/* ══════════════════════════════════════════════════════════════
+   SNACKBAR — New Transaction Notification
+   ══════════════════════════════════════════════════════════════ */
+
+.snackbar-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+  pointer-events: none;
+  max-width: 360px;
+}
+
+.snackbar {
+  pointer-events: auto;
+  background: #1a2332;
+  color: #e2e8f0;
+  border: 1px solid #2d3a4a;
+  border-radius: 10px;
+  padding: 14px 18px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  will-change: transform, opacity;
+}
+
+/* ── Enter animation ── */
+
+@keyframes snackbar-enter {
+  0% {
+    transform: translateX(120%) scale(0.85);
+    opacity: 0;
+  }
+  60% {
+    transform: translateX(-6%) scale(1.02);
+    opacity: 1;
+  }
+  80% {
+    transform: translateX(2%) scale(0.99);
+  }
+  100% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.snackbar--entering {
+  animation: snackbar-enter 400ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ── Exit animation ── */
+
+@keyframes snackbar-exit {
+  0% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(80%) scale(0.9);
+    opacity: 0;
+  }
+}
+
+.snackbar--exiting {
+  animation: snackbar-exit 350ms ease-in forwards;
+}
+
+/* ── Snackbar content ── */
+
+.snackbar__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.snackbar__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #15803d;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.snackbar__title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+}
+
+.snackbar__body {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 28px;
+  font-size: 14px;
+  color: #e2e8f0;
+}
+
+.snackbar__id {
+  font-family: var(--mono);
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.snackbar__dot {
+  color: #64748b;
+}
+
+.snackbar__amount {
+  font-family: var(--mono);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #e2e8f0;
+}
+
+/* ── Respect reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .snackbar--entering,
+  .snackbar--exiting {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .snackbar--entering {
+    opacity: 1;
+  }
+
+  .snackbar--exiting {
+    opacity: 0;
+  }
+}
+
 /* ---- Responsive ---- */
 @media (max-width: 900px) {
   .summary-grid {

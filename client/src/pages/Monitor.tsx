@@ -1,13 +1,24 @@
 import { useCallback, useState } from 'react'
 import SummaryCard from '../components/SummaryCard'
 import TransactionsTable from '../components/TransactionsTable'
+import SnackbarContainer from '../components/SnackbarContainer'
 import { updateTransactionStatus } from '../api/transactionsApi'
 import { useTransactions } from '../hooks/useTransactions'
 import { summarizeTransactions } from '../data/summaries'
-import type { TransactionStatus } from '../types/transaction'
+import type { Transaction, TransactionStatus } from '../types/transaction'
 
 export default function Monitor() {
-  const { transactions, setTransactions, isLoading, error, reload } = useTransactions()
+  const [newTransactions, setNewTransactions] = useState<Transaction[]>([])
+
+  const handleNewTransaction = useCallback((txn: Transaction) => {
+    setNewTransactions((prev) => [...prev, txn])
+  }, [])
+
+  const handleConsumed = useCallback((transactionId: string) => {
+    setNewTransactions((prev) => prev.filter((t) => t.transactionId !== transactionId))
+  }, [])
+
+  const { transactions, setTransactions, isLoading, error, reload } = useTransactions(handleNewTransaction)
   const [updateError, setUpdateError] = useState<string | null>(null)
   const [animatingTransactionId, setAnimatingTransactionId] = useState<string | null>(null)
 
@@ -97,6 +108,11 @@ export default function Monitor() {
             animatingTransactionId={animatingTransactionId}
             onUpdateStatus={handleUpdateStatus}
             onAnimationEnd={handleAnimationEnd}
+          />
+
+          <SnackbarContainer
+            newTransactions={newTransactions}
+            onConsumed={handleConsumed}
           />
         </>
       )}

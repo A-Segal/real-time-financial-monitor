@@ -12,13 +12,17 @@ interface UseTransactionsResult {
   reload: () => void
 }
 
-export function useTransactions(): UseTransactionsResult {
+export function useTransactions(
+  onNewTransaction?: (txn: Transaction) => void,
+): UseTransactionsResult {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [attempt, setAttempt] = useState(0)
   const loadingRef = useRef(true)
   const pendingCreatedRef = useRef(new Map<string, Transaction>())
+  // Track seen transaction IDs to avoid duplicate callbacks
+  const knownIdsRef = useRef(new Set<string>())
 
   useEffect(() => {
     let cancelled = false
@@ -31,6 +35,9 @@ export function useTransactions(): UseTransactionsResult {
       try {
         const data = await fetchTransactions()
         if (!cancelled) {
+          // Populate known IDs from initial data to avoid snackbar for existing transactions
+          data.forEach((txn) => knownIdsRef.current.add(txn.transactionId))
+
           setTransactions((prev) => {
             const apiIds = new Set(data.map((txn) => txn.transactionId))
             const pending = [...pendingCreatedRef.current.values()].filter(
@@ -66,6 +73,10 @@ export function useTransactions(): UseTransactionsResult {
     }
   }, [attempt])
 
+  // Keep a ref to onNewTransaction to avoid stale closures in the SignalR callback
+  const onNewTxnRef = useRef(onNewTransaction)
+  onNewTxnRef.current = onNewTransaction
+
   useEffect(() => {
     let cancelled = false
 
@@ -82,6 +93,14 @@ export function useTransactions(): UseTransactionsResult {
           }
           return [incoming, ...prev]
         })
+
+        // Notify about genuinely new transactions we haven't seen before.
+        // Use knownIdsRef to prevent duplicate callbacks even if the same
+        // SignalR event arrives multiple times.
+        if (!knownIdsRef.current.has(incoming.transactionId)) {
+          knownIdsRef.current.add(incoming.transactionId)
+          onNewTxnRef.current?.(incoming)
+        }
       },
       onTransactionStatusUpdated: ({ transactionId, status }) => {
         if (cancelled) return
