@@ -3,17 +3,24 @@ import StatusBadge from './StatusBadge'
 
 interface TransactionsTableProps {
   transactions: Transaction[]
+  animatingTransactionId?: string | null
   onUpdateStatus?: (transactionId: string, status: TransactionStatus) => void
+  onAnimationEnd?: () => void
 }
 
 const STATUS_OPTIONS: TransactionStatus[] = ['Pending', 'Completed', 'Failed']
 
 export default function TransactionsTable({
   transactions,
+  animatingTransactionId,
   onUpdateStatus,
+  onAnimationEnd,
 }: TransactionsTableProps) {
+
   return (
-    <section className="transactions" aria-labelledby="transactions-heading">
+    <section className="transactions"
+      aria-labelledby="transactions-heading"
+    >
       <header className="transactions__header">
         <h2 id="transactions-heading">Recent Transactions</h2>
       </header>
@@ -37,45 +44,52 @@ export default function TransactionsTable({
               </tr>
             </thead>
             <tbody>
-              {transactions.map((txn) => (
-                <tr key={txn.transactionId}>
-                  <td className="transactions__id">{txn.transactionId}</td>
-                  <td className="transactions__amount">
-                    {formatAmount(txn.amount)}
-                  </td>
-                  <td>{txn.currency}</td>
-                  <td>
-                    <StatusBadge status={txn.status} />
-                  </td>
-                  <td className="transactions__timestamp">
-                    {formatTimestamp(txn.timestamp)}
-                  </td>
-                  {onUpdateStatus && txn.status === 'Pending' && (
-                    <td className="transactions__actions">
-                      <label className="transactions__status-picker">
-                        <span className="visually-hidden">Update status</span>
-                        <select
-                          className="transactions__status-select"
-                          value={txn.status}
-                          onChange={(e) =>
-                            onUpdateStatus(
-                              txn.transactionId,
-                              e.target.value as TransactionStatus,
-                            )
-                          }
-                          aria-label={`Update status for ${txn.transactionId}`}
-                        >
-                          {STATUS_OPTIONS.map((s) => (
-                            <option key={s} value={s}>
-                              {s}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
+              {transactions.map((txn) => {
+                const isAnimating = animatingTransactionId === txn.transactionId
+                return (
+                  <tr key={txn.transactionId}>
+                    <td className="transactions__id">{txn.transactionId}</td>
+                    <td className="transactions__amount">
+                      {formatAmount(txn.amount)}
                     </td>
-                  )}
-                </tr>
-              ))}
+                    <td>{txn.currency}</td>
+                    <td>
+                      <StatusBadge
+                        status={txn.status}
+                        animating={isAnimating}
+                        onAnimationEnd={onAnimationEnd}
+                      />
+                    </td>
+                    <td className="transactions__timestamp">
+                      {formatTimestamp(txn.timestamp)}
+                    </td>
+                    {onUpdateStatus && txn.status === 'Pending' && !isAnimating && (
+                      <td className="transactions__actions">
+                        <label className="transactions__status-picker">
+                          <span className="visually-hidden">Update status</span>
+                          <select
+                            className="transactions__status-select"
+                            value={txn.status}
+                            onChange={(e) =>
+                              onUpdateStatus(
+                                txn.transactionId,
+                                e.target.value as TransactionStatus,
+                              )
+                            }
+                            aria-label={`Update status for ${txn.transactionId}`}
+                          >
+                            {STATUS_OPTIONS.map((s) => (
+                              <option key={s} value={s}>
+                                {s}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      </td>
+                    )}
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         )}

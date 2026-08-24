@@ -6,40 +6,62 @@ interface EntryProps {
 
 export default function Entry({ onNavigate }: EntryProps) {
   return (
-    <div className="dashboard">
-      <header className="app-header">
-        <div className="app-header__brand">Real-Time Financial Monitor</div>
-        <h1 className="app-header__title">Welcome</h1>
-      </header>
+    <div className="home-page">
+      <div className="home-hero">
+        <img
+          className="home-hero__icon"
+          src="/money-bag.png"
+          alt=""
+          width="90"
+          height="90"
+        />
 
-      <p className="entry__intro">
-        Monitor financial transactions in real time. Add a new transaction or
-        watch the live dashboard as updates stream in.
-      </p>
+        <span className="home-hero__eyebrow">FINANCIAL SYSTEM</span>
+        <h1 className="home-hero__title">Financial Monitor</h1>
+        <p className="home-hero__subtitle">
+          Real-time transaction monitoring
+        </p>
+      </div>
 
-      <section className="entry__actions" aria-label="Available actions">
+      <div className="home-cards">
         <button
           type="button"
-          className="entry__action"
-          onClick={() => onNavigate('add')}
-        >
-          <span className="entry__action-title">Add Transaction</span>
-          <span className="entry__action-text">
-            Create a new transaction with an amount, currency and initial status.
-          </span>
-        </button>
-
-        <button
-          type="button"
-          className="entry__action"
+          className="home-card home-card--monitor"
           onClick={() => onNavigate('monitor')}
         >
-          <span className="entry__action-title">Monitor</span>
-          <span className="entry__action-text">
-            View summary totals and follow live status updates as they happen.
-          </span>
+          <div className="home-card__icon-wrap home-card__icon-wrap--blue">
+            <span className="home-card__icon" aria-hidden="true">↗</span>
+          </div>
+          <div className="home-card__body">
+            <h2 className="home-card__title">MONITOR</h2>
+            <p className="home-card__desc">
+              View and monitor transactions in real time.
+            </p>
+          </div>
+          <span className="home-card__arrow" aria-hidden="true">→</span>
         </button>
-      </section>
+
+        <button
+          type="button"
+          className="home-card home-card--add"
+          onClick={() => onNavigate('add')}
+        >
+          <div className="home-card__icon-wrap home-card__icon-wrap--green">
+            <span className="home-card__icon" aria-hidden="true">+</span>
+          </div>
+          <div className="home-card__body">
+            <h2 className="home-card__title">ADD TRANSACTION</h2>
+            <p className="home-card__desc">
+              Create and send a new transaction.
+            </p>
+          </div>
+          <span className="home-card__arrow" aria-hidden="true">→</span>
+        </button>
+      </div>
+
+      <footer className="home-footer">
+        REAL-TIME FINANCIAL MONITOR
+      </footer>
     </div>
   )
 }
