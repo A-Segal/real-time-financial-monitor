@@ -14,6 +14,7 @@ interface UseTransactionsResult {
 
 export function useTransactions(
   onNewTransaction?: (txn: Transaction) => void,
+  onStatusUpdated?: (transactionId: string) => void,
 ): UseTransactionsResult {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -73,9 +74,11 @@ export function useTransactions(
     }
   }, [attempt])
 
-  // Keep a ref to onNewTransaction to avoid stale closures in the SignalR callback
+  // Keep refs to callbacks to avoid stale closures in the SignalR callback
   const onNewTxnRef = useRef(onNewTransaction)
   onNewTxnRef.current = onNewTransaction
+  const onStatusUpdatedRef = useRef(onStatusUpdated)
+  onStatusUpdatedRef.current = onStatusUpdated
 
   useEffect(() => {
     let cancelled = false
@@ -110,6 +113,8 @@ export function useTransactions(
             txn.transactionId === transactionId ? { ...txn, status } : txn,
           ),
         )
+
+        onStatusUpdatedRef.current?.(transactionId)
       },
     })
 

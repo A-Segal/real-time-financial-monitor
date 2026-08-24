@@ -36,9 +36,14 @@ export default function Monitor() {
     setNewTransactions((prev) => prev.filter((t) => t.transactionId !== transactionId))
   }, [])
 
-  const { transactions, setTransactions, isLoading, error, reload } = useTransactions(handleNewTransaction)
-  const [updateError, setUpdateError] = useState<string | null>(null)
   const [animatingTransactionId, setAnimatingTransactionId] = useState<string | null>(null)
+  const [updateError, setUpdateError] = useState<string | null>(null)
+
+  const triggerAnimation = useCallback((transactionId: string) => {
+    setAnimatingTransactionId(transactionId)
+  }, [])
+
+  const { transactions, setTransactions, isLoading, error, reload } = useTransactions(handleNewTransaction, triggerAnimation)
 
   const filteredTransactions = useMemo(() => {
     if (statusFilter === 'all') return transactions
@@ -59,7 +64,7 @@ export default function Monitor() {
         ),
       )
       // Trigger the animation
-      setAnimatingTransactionId(transactionId)
+      triggerAnimation(transactionId)
     } catch (err) {
       setUpdateError(
         err instanceof Error ? err.message : 'Failed to update transaction.',
