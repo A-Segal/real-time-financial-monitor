@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchTransactions } from '../api/transactionsApi'
 import { connectToTransactionsHub } from '../api/transactionsHub'
+import type { Dispatch, SetStateAction } from 'react'
 import type { Transaction } from '../types/transaction'
 
 interface UseTransactionsResult {
   transactions: Transaction[]
+  setTransactions: Dispatch<SetStateAction<Transaction[]>>
   isLoading: boolean
   error: string | null
   reload: () => void
@@ -100,5 +102,5 @@ export function useTransactions(): UseTransactionsResult {
 
   const reload = useCallback(() => setAttempt((n) => n + 1), [])
 
-  return { transactions, isLoading, error, reload }
+  return { transactions, setTransactions, isLoading, error, reload }
 }
