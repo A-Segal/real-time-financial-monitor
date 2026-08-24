@@ -223,3 +223,63 @@ describe('Monitor status filter', () => {
     expect(screen.getByText('a')).toBeInTheDocument()
   })
 })
+
+describe('Monitor view switcher', () => {
+  it('renders view switcher with Table active by default', async () => {
+    fetchMock.mockResolvedValue([])
+    setupHub()
+    render(<Monitor />)
+    const tableBtn = await screen.findByRole('button', { name: 'Table' })
+    const dashboardBtn = screen.getByRole('button', { name: 'Dashboard' })
+    expect(tableBtn).toBeInTheDocument()
+    expect(dashboardBtn).toBeInTheDocument()
+    expect(tableBtn).toHaveAttribute('aria-pressed', 'true')
+    expect(dashboardBtn).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('switches between Table and Dashboard views', async () => {
+    fetchMock.mockResolvedValue([
+      transaction({ transactionId: 'a', status: 'Pending' }),
+    ])
+    setupHub()
+    const user = userEvent.setup()
+    render(<Monitor />)
+    await screen.findByText('a')
+    // Table view shows the table
+    expect(screen.getByRole('table')).toBeInTheDocument()
+    // Switch to Dashboard
+    await user.click(screen.getByRole('button', { name: 'Dashboard' }))
+    // Table should be hidden in Dashboard view
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+    // Summary cards should still be visible
+    expect(screen.getByText('Total Transactions')).toBeInTheDocument()
+    // Dashboard view shows card for the transaction
+    expect(screen.getByText('a')).toBeInTheDocument()
+    // Switch back to Table
+    await user.click(screen.getByRole('button', { name: 'Table' }))
+    expect(screen.getByRole('table')).toBeInTheDocument()
+  })
+
+  it('preserves filter when switching views', async () => {
+    fetchMock.mockResolvedValue([
+      transaction({ transactionId: 'a', status: 'Pending' }),
+      transaction({ transactionId: 'b', status: 'Completed' }),
+    ])
+    setupHub()
+    const user = userEvent.setup()
+    render(<Monitor />)
+    await screen.findByText('a')
+    // Set filter to Pending
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Filter:' }), 'Pending')
+    expect(screen.getByText('a')).toBeInTheDocument()
+    expect(screen.queryByText('b')).not.toBeInTheDocument()
+    // Switch to Dashboard and back
+    await user.click(screen.getByRole('button', { name: 'Dashboard' }))
+    expect(screen.getByText('a')).toBeInTheDocument()
+    expect(screen.queryByText('b')).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Table' }))
+    // Filter should still be active
+    expect(screen.getByText('a')).toBeInTheDocument()
+    expect(screen.queryByText('b')).not.toBeInTheDocument()
+  })
+})

@@ -18,7 +18,9 @@ export default function TransactionsTable({
 }: TransactionsTableProps) {
 
   return (
-    <section className="transactions" aria-labelledby="transactions-heading">
+    <section className="transactions"
+      aria-labelledby="transactions-heading"
+    >
       <header className="transactions__header">
         <h2 id="transactions-heading">Recent Transactions</h2>
       </header>

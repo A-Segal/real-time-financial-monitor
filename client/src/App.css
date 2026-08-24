@@ -324,6 +324,7 @@
   font-size: 14px;
 }
 
+
 .transactions__empty {
   margin: 0;
   padding: 48px 20px;
@@ -717,6 +718,54 @@
   border: 1px solid var(--status-failed-border);
 }
 
+/* ── Monitor control bar (view switcher + filter + options) ── */
+
+.monitor-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* ── View switcher ── */
+
+.monitor-view-switcher {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.monitor-view-btn {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 7px 16px;
+  border: none;
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.monitor-view-btn:not(:last-child) {
+  border-right: 1px solid var(--border);
+}
+
+.monitor-view-btn:hover {
+  background: #f1f5f9;
+  color: var(--text);
+}
+
+.monitor-view-btn--active {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.monitor-view-btn--active:hover {
+  background: #1a3fbf;
+}
+
 /* ── Monitor status filter ── */
 
 .monitor-filters {
@@ -757,6 +806,45 @@
 
 .transactions__actions-head {
   text-align: left;
+}
+
+/* ── Dashboard view (card-based layout) ── */
+
+.dashboard-view__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.dashboard-view__card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dashboard-view__card-id {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+  word-break: break-all;
+}
+
+.dashboard-view__card-amount {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.dashboard-view__empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--text-muted);
+  padding: 32px 16px;
 }
 
 .transactions__status-picker {
