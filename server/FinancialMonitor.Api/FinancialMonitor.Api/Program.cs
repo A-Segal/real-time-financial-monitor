@@ -2,6 +2,7 @@ using FinancialMonitor.Api.Data;
 using FinancialMonitor.Api.Repositories;
 using FinancialMonitor.Api.Services;
 using Microsoft.EntityFrameworkCore;
+using StackExchange.Redis;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,7 +19,31 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(
         builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddSignalR();
+var redisConnectionString = builder.Configuration["Redis:ConnectionString"];
+
+if (!string.IsNullOrEmpty(redisConnectionString))
+{
+    builder.Services.AddSignalR()
+        .AddStackExchangeRedis(redisConnectionString, redisOptions =>
+        {
+            redisOptions.Configuration.ChannelPrefix = RedisChannel.Literal("FinancialMonitor");
+        });
+}
+else
+{
+    builder.Services.AddSignalR();
+}
+
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials()
+              .SetIsOriginAllowed(_ => true);
+    });
+});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -37,6 +62,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors();
+
 app.UseHttpsRedirection();
 
 app.MapControllers();
@@ -45,12 +72,6 @@ app.MapHub<FinancialMonitor.Api.Hubs.TransactionHub>("/hubs/transactions");
 
 app.Run();
 
-/// <summary>
-///     Partial declaration of <c>Program</c> so the web application factory
-///     (<c>WebApplicationFactory&lt;Program&gt;</c>) used by the integration tests can
-///     reference the real application entry point. This is the standard ASP.NET Core
-///     pattern for spinning up the real host inside tests.
-/// </summary>
 public partial class Program
 {
 }

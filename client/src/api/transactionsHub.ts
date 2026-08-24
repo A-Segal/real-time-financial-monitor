@@ -2,7 +2,10 @@ import * as signalR from '@microsoft/signalr'
 import { isTransactionStatus } from '../types/transaction'
 import type { Transaction, TransactionStatus } from '../types/transaction'
 
-const HUB_URL = '/hubs/transactions'
+function hubUrl(): string {
+  const base = (import.meta.env.VITE_API_URL ?? '').replace(/\/+$/, '')
+  return `${base}/hubs/transactions`
+}
 
 interface TransactionCreatedPayload {
   transactionId: string
@@ -23,7 +26,7 @@ export function connectToTransactionsHub(options: {
 }) {
   const { onTransactionCreated, onTransactionStatusUpdated } = options
   const connection = new signalR.HubConnectionBuilder()
-    .withUrl(HUB_URL)
+    .withUrl(hubUrl())
     .withAutomaticReconnect()
     .build()
 

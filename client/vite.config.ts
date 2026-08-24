@@ -5,6 +5,13 @@ import { fileURLToPath } from 'node:url'
 
 const clientRoot = path.dirname(fileURLToPath(import.meta.url))
 
+// When VITE_API_URL is set at dev-time, the frontend talks directly to that
+// backend (bypassing the Vite proxy).  Without it, the proxy is used so
+// `npm run dev` works out of the box against a single backend on port 5120.
+const apiUrl = process.env.VITE_API_URL
+
+const proxyTarget = apiUrl ?? 'http://127.0.0.1:5120'
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -31,11 +38,11 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:5120',
+        target: proxyTarget,
         changeOrigin: true,
       },
       '/hubs': {
-        target: 'http://127.0.0.1:5120',
+        target: proxyTarget,
         changeOrigin: true,
         ws: true,
       },

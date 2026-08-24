@@ -49,6 +49,13 @@ public sealed class TestApplicationFactory : WebApplicationFactory<Program>
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        // Ensure the Redis backplane is NOT configured during these tests (no Redis
+        // dependency for the standard integration tests). The web host defaults to the
+        // "Development" environment which loads appsettings.Development.json, but that
+        // file now contains a Redis:ConnectionString for local development. We override
+        // it to empty so these tests run without Redis.
+        builder.UseSetting("Redis:ConnectionString", "");
+
         builder.ConfigureServices(services =>
         {
             // Replace the real (file-backed) DbContext options with options that target
