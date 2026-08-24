@@ -4,18 +4,6 @@ using System.Text;
 
 namespace FinancialMonitor.Api.IntegrationTests;
 
-/// <summary>
-///     Integration tests hitting the <em>real</em> application over HTTP.
-///
-///     These are deliberately distinct from the unit tests for
-///     <see cref="Services.TransactionService"/>: nothing is mocked here. The request
-///     flows through the genuine HTTP pipeline
-///     (controller → service → repository → EF Core/SQLite) and persists to a real,
-///     per-test SQLite database that is migrated by the real <c>Program</c> startup.
-///
-///     Each test boots its own <see cref="TestApplicationFactory"/>, so it gets both a
-///     fresh application instance and a fresh, isolated database.
-/// </summary>
 public class TransactionsControllerIntegrationTests : IAsyncLifetime
 {
     private TestApplicationFactory _factory = null!;
@@ -35,17 +23,12 @@ public class TransactionsControllerIntegrationTests : IAsyncLifetime
         await _factory.DisposeAsync();
     }
 
-    // ----------------------------------------------------------------------------
-    // GET /api/transactions
-    // ----------------------------------------------------------------------------
 
     [Fact]
     public async Task GetAllTransactions_OnEmptyDatabase_Returns200AndEmptyArray()
     {
-        // Act
         var response = await _client.GetAsync(ApiTestContracts.BasePath);
 
-        // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var transactions = await response.Content
@@ -58,7 +41,7 @@ public class TransactionsControllerIntegrationTests : IAsyncLifetime
     [Fact]
     public async Task GetAllTransactions_AfterCreate_ReturnsPersistedTransaction()
     {
-        // Arrange - create one transaction through the real API.
+        // Create one transaction through the real API.
         var request = new ApiTestContracts.CreateTransactionRequestDto
         {
             Amount = 2500m,
@@ -69,7 +52,6 @@ public class TransactionsControllerIntegrationTests : IAsyncLifetime
         var createResponse = await _client.PostAsJsonAsync(ApiTestContracts.BasePath, request);
         Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
 
-        // Act
         var response = await _client.GetAsync(ApiTestContracts.BasePath);
 
         // Assert - the created transaction is really in the database.
@@ -86,9 +68,6 @@ public class TransactionsControllerIntegrationTests : IAsyncLifetime
         Assert.NotEqual(Guid.Empty, transaction.TransactionId);
     }
 
-    // ----------------------------------------------------------------------------
-    // POST /api/transactions
-    // ----------------------------------------------------------------------------
 
     [Fact]
     public async Task AddTransaction_WithValidRequest_Returns201CreatedWithMappedBody()
@@ -193,9 +172,6 @@ public class TransactionsControllerIntegrationTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    // ----------------------------------------------------------------------------
-    // PUT /api/transactions/{id}/status
-    // ----------------------------------------------------------------------------
 
     [Fact]
     public async Task UpdateTransactionStatus_WithValidRequest_Returns204AndPersistsChange()
@@ -297,9 +273,6 @@ public class TransactionsControllerIntegrationTests : IAsyncLifetime
         Assert.Equal("Failed", updated.Status);
     }
 
-    // ----------------------------------------------------------------------------
-    // PUT /api/transactions/{id}/status - Pending-state enforcement
-    // ----------------------------------------------------------------------------
 
     // A transaction may only be updated while it is Pending; once it has been completed
     // or has failed, further updates must be rejected with a 409 Conflict.

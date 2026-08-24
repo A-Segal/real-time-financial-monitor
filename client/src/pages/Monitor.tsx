@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
+import { formatAmount } from '../utils/format'
 import SummaryCard from '../components/SummaryCard'
 import TransactionsTable from '../components/TransactionsTable'
 import StatusBadge from '../components/StatusBadge'
@@ -57,13 +58,11 @@ export default function Monitor() {
     setUpdateError(null)
     try {
       await updateTransactionStatus(transactionId, status)
-      // Update the transaction optimistically
       setTransactions((prev) =>
         prev.map((txn) =>
           txn.transactionId === transactionId ? { ...txn, status } : txn,
         ),
       )
-      // Trigger the animation
       triggerAnimation(transactionId)
     } catch (err) {
       setUpdateError(
@@ -72,9 +71,7 @@ export default function Monitor() {
     }
   }
 
-  const handleAnimationEnd = useCallback(() => {
-    setAnimatingTransactionId(null)
-  }, [])
+  const handleAnimationEnd = () => setAnimatingTransactionId(null)
 
   const summaries = useMemo(() => summarizeTransactions(transactions), [transactions])
 
@@ -133,7 +130,6 @@ export default function Monitor() {
             </p>
           )}
 
-          {/* ── Control bar: view switcher, filter ── */}
           <div className="monitor-controls">
             <div className="monitor-view-switcher" role="group" aria-label="View mode">
               {VIEW_OPTIONS.map((opt) => (
@@ -212,9 +208,3 @@ export default function Monitor() {
   )
 }
 
-function formatAmount(amount: number): string {
-  return new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount)
-}

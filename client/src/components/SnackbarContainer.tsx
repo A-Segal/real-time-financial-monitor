@@ -1,10 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import { formatAmount } from '../utils/format'
 import type { Transaction } from '../types/transaction'
-
-// ---------------------------------------------------------------------------
-// Snackbar phase lifecycle:
-//   entering (slide-in) → visible (4s) → exiting (slide-out) → removed
-// ---------------------------------------------------------------------------
 
 type Phase = 'entering' | 'visible' | 'exiting'
 
@@ -14,15 +10,8 @@ interface SnackbarItem {
   phase: Phase
 }
 
-// ---------------------------------------------------------------------------
-// SnackbarContainer — receives new transactions and manages their lifecycle
-// ---------------------------------------------------------------------------
-
 interface SnackbarContainerProps {
-  /** New transaction objects to show as snackbars (deduped by transactionId) */
   newTransactions: Transaction[]
-  /** Called after a snackbar has been fully consumed (exited and removed).
-   *  The parameter is the transactionId of the consumed snackbar. */
   onConsumed: (transactionId: string) => void
 }
 
@@ -35,7 +24,6 @@ export default function SnackbarContainer({
   const idCounterRef = useRef(0)
   const seenRef = useRef(new Set<string>())
 
-  // Process incoming new transactions
   useEffect(() => {
     if (newTransactions.length === 0) return
 
@@ -56,7 +44,6 @@ export default function SnackbarContainer({
     })
   }, [newTransactions])
 
-  // Phase transitions: entering → visible → exiting → removed
   useEffect(() => {
     for (const item of items) {
       if (item.phase === 'entering' && !timersRef.current.has(`enter-${item.id}`)) {
@@ -85,7 +72,6 @@ export default function SnackbarContainer({
     }
   }, [items, onConsumed])
 
-  // Cleanup all timers on unmount
   useEffect(() => {
     const timers = timersRef.current
     return () => {
@@ -114,10 +100,7 @@ export default function SnackbarContainer({
 function SnackbarEntry({ item }: { item: SnackbarItem }) {
   const { transaction, phase } = item
 
-  const amount = new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(transaction.amount)
+  const amount = formatAmount(transaction.amount)
 
   return (
     <div className={`snackbar snackbar--${phase}`} role="status">

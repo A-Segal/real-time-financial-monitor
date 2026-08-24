@@ -29,3 +29,27 @@ dist/
 
 # Code coverage reports
 coverage-report/
+
+# Playwright artifacts
+**/test-results/
+**/playwright-report/
+**/playwright/.cache/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Code coverage
+coverage/
+
+# IDE
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.local
+
+# Docker volume artifacts
+sqldata/

@@ -11,29 +11,7 @@ services:
       timeout: 3s
       retries: 5
 
-  # ---------------------------------------------------------------------------
-  # Backend — ASP.NET Core + SignalR service.
-  #
-  # A SINGLE scalable backend service.  Use `--scale backend=N` to create N
-  # replicas.  Each replica registers under the Docker Compose service name
-  # ("backend") and Docker DNS returns all replica IPs on each query.
-  #
-  # All replicas share the same SQLite database file via a Docker named volume
-  # mounted at /app/data.  SQLite is configured with WAL mode and busy_timeout
-  # so multiple replicas can read concurrently and writes serialise safely at
-  # this application's low-throughput demo load.
-  #
-  # A production/Kubernetes deployment would replace the shared SQLite volume
-  # with a shared database such as PostgreSQL or SQL Server.
-  #
-  # Database directory is created and permission-fixed by entrypoint.sh.
-  #
-  # No host port mapping is defined — all traffic goes through the
-  # backend-lb load balancer on port 5000.
-  #
-  # Redis connection uses the Docker Compose service name (redis:6379)
-  # rather than localhost/127.0.0.1.
-  # ---------------------------------------------------------------------------
+  # Shared SQLite volume, Redis backplane. Scale with --scale backend=N
   backend:
     build:
       context: .
@@ -47,19 +25,7 @@ services:
     volumes:
       - sqldata:/app/data
 
-  # ---------------------------------------------------------------------------
-  # Backend load balancer — nginx reverse proxy.
-  #
-  # This is the SINGLE entry point for all backend traffic.  It dynamically
-  # discovers backend replicas using a startup script that queries Docker DNS
-  # and generates the nginx upstream configuration.
-  #
-  #   /api/   → Round Robin across all replicas
-  #   /hubs/  → Sticky sessions via $cookie_signalr_id consistent hash
-  #
-  # The startup script runs before nginx starts and regenerates the config
-  # on Docker scale events (SIGHUP).
-  # ---------------------------------------------------------------------------
+  # nginx reverse proxy with dynamic replica discovery and sticky-signalr routing
   backend-lb:
     build:
       context: loadbalancer
@@ -71,15 +37,7 @@ services:
     depends_on:
       - backend
 
-  # ---------------------------------------------------------------------------
-  # Frontend — single nginx-served React SPA.
-  #
-  # VITE_API_URL points to the load balancer so the browser talks to a
-  # single URL regardless of how many backend replicas exist.
-  #
-  # The same image works for any number of backends because the API URL
-  # is injected at container runtime (not build time).
-  # ---------------------------------------------------------------------------
+  # nginx-served React SPA with runtime API URL injection (VITE_API_URL)
   frontend:
     build:
       context: client

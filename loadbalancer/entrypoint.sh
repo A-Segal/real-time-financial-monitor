@@ -1,22 +1,4 @@
 #!/bin/sh
-# ---------------------------------------------------------------------------
-# Dynamic nginx configuration generator for Real-Time Financial Monitor.
-#
-# On startup, this script:
-#   1. Resolves the "backend" hostname via Docker DNS to discover ALL
-#      backend replica IPs
-#   2. Generates a nginx upstream block with ONE `server <ip>:8080;` per
-#      unique IP
-#   3. Generates the full nginx config file
-#   4. Starts nginx
-#
-# A background watcher re-resolves every N seconds and SIGHUPs nginx
-# when the IP set changes (e.g. after `docker compose up -d --scale backend=N`).
-#
-# Two upstream pools are generated:
-#   backend_api      — Round Robin (default upstream balancing)
-#   backend_signalr  — hash $cookie_signalr_id consistent (sticky sessions)
-# ---------------------------------------------------------------------------
 
 set -e
 
@@ -32,15 +14,6 @@ log() {
     echo "[entrypoint] $(date -Iseconds) $*"
 }
 
-# ---------------------------------------------------------------------------
-# Resolve all unique IPs for the backend hostname via Docker DNS.
-#
-# Uses nslookup (available on Alpine) which returns ALL A records in a
-# single query, unlike getent hosts which returns only one IP (Docker DNS
-# round-robins per-query).
-#
-# Returns one IP per line, sorted, unique, excluding self and the resolver.
-# ---------------------------------------------------------------------------
 resolve_backend_ips() {
     nslookup "$BACKEND_HOST" 127.0.0.11 2>/dev/null \
         | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}' \
@@ -51,13 +24,6 @@ resolve_backend_ips() {
         || true
 }
 
-# ---------------------------------------------------------------------------
-# Generate the upstream block for a given name, mode, and list of IPs.
-#
-# Usage:  gen_upstream <name> <mode> <ip1> <ip2> ...
-#   mode = ""        → Round Robin (no special directive)
-#   mode = "hash"    → hash $cookie_signalr_id consistent
-# ---------------------------------------------------------------------------
 gen_upstream() {
     name="$1"
     mode="$2"
@@ -78,12 +44,6 @@ gen_upstream() {
     echo ""
 }
 
-# ---------------------------------------------------------------------------
-# Generate the full nginx configuration file.
-#
-# Args:  generate_config <space-separated-ips>
-# Uses the same IP list for both upstream pools.
-# ---------------------------------------------------------------------------
 generate_config() {
     all_ips="$1"
 

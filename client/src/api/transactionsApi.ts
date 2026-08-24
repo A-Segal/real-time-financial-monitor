@@ -1,23 +1,6 @@
 import { isTransactionStatus } from '../types/transaction'
+import { apiBaseUrl } from '../utils/apiBaseUrl'
 import type { Transaction, TransactionStatus } from '../types/transaction'
-
-/**
- * Returns the runtime API base URL.
- * Priority:
- *   1. window.__RUNTIME_CONFIG__.apiUrl (set at container start by nginx envsubst)
- *   2. import.meta.env.VITE_API_URL (build-time Vite env var, used in dev)
- *   3. '' (relative URLs, works with Vite proxy in dev)
- */
-function apiBaseUrl(): string {
-  if (
-    typeof window !== 'undefined' &&
-    window.__RUNTIME_CONFIG__?.apiUrl &&
-    window.__RUNTIME_CONFIG__.apiUrl !== '$VITE_API_URL'
-  ) {
-    return window.__RUNTIME_CONFIG__.apiUrl
-  }
-  return (import.meta.env.VITE_API_URL ?? '')
-}
 
 function apiUrl(path: string): string {
   const base = apiBaseUrl().replace(/\/+$/, '')

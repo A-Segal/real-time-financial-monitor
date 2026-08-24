@@ -16,18 +16,10 @@ builder.Services.AddControllers()
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 
-// -----------------------------------------------------------------------
 // SQLite with WAL mode and busy_timeout for shared-volume concurrency.
-//
-// A single open SqliteConnection is passed to EF Core so that the WAL
-// PRAGMAs applied on first open are guaranteed to take effect on the
-// connection EF Core uses internally.
-//
-// WAL mode allows concurrent readers from multiple processes (backends)
-// and serialises writers with a 5-second busy timeout.  This is safe for
-// the low-throughput demo workload; production deployments should replace
-// SQLite with PostgreSQL or SQL Server.
-// -----------------------------------------------------------------------
+// A single open SqliteConnection is passed to EF Core so the WAL PRAGMAs
+// applied on first open are guaranteed to take effect on the connection
+// EF Core uses internally.
 var sqliteConnection = new SqliteConnection(
     builder.Configuration.GetConnectionString("DefaultConnection"));
 
@@ -72,10 +64,6 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// -----------------------------------------------------------------------
-// Diagnostic middleware — adds X-Backend-Instance header to every response
-// so we can see which backend replica handled the request.
-// -----------------------------------------------------------------------
 app.Use(async (context, next) =>
 {
     context.Response.OnStarting(() =>
@@ -106,8 +94,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors();
 
-// HttpsRedirection is disabled in Docker (no HTTPS proxy configured).
-// Production deployments should terminate TLS at the ingress/reverse proxy.
 if (!app.Environment.IsEnvironment("Docker"))
 {
     app.UseHttpsRedirection();
@@ -117,17 +103,6 @@ app.MapControllers();
 
 app.MapHub<FinancialMonitor.Api.Hubs.TransactionHub>("/hubs/transactions");
 
-// -----------------------------------------------------------------------
-// Load Balancer sticky-session diagnostic endpoint.
-//
-// Returns detailed information about the client's sticky-session state
-// and which backend instance handled the request.  Used to verify that
-// SignalR sticky sessions are working correctly.
-//
-// This endpoint goes through the backend_signalr upstream pool (sticky)
-// so that once a client has a signalr_id cookie, it always hits the
-// same backend.
-// -----------------------------------------------------------------------
 app.MapGet("/lb-debug", (HttpContext context) =>
 {
     var hasCookie = context.Request.Cookies.ContainsKey("signalr_id");
@@ -153,29 +128,12 @@ app.MapGet("/lb-debug", (HttpContext context) =>
     });
 });
 
-// -----------------------------------------------------------------------
-// Sticky-test endpoint — dedicated endpoint for verifying that sticky
-// sessions are working correctly.
-//
-// This endpoint intentionally has NO cookie-reading logic.  It simply
-// returns the instance ID.  Verification of sticky routing is done by
-// sending a request WITH a signalr_id cookie and observing that the
-// X-Backend-Instance response header is the same for every request
-// with that cookie value.
-//
-// nginx routes this through the backend_signalr upstream pool which
-// uses 'hash $cookie_signalr_id consistent' for sticky routing.
-// -----------------------------------------------------------------------
 app.MapGet("/sticky-test", () => Results.Ok(new
 {
     status = "StickyTest",
     instance = Environment.MachineName
 }));
 
-// -----------------------------------------------------------------------
-// Health check endpoint — used by the load balancer to verify backend availability.
-// Returns 200 OK with the container hostname to help verify Round Robin distribution.
-// -----------------------------------------------------------------------
 app.MapGet("/health", () => Results.Ok(new
 {
     status = "Healthy",

@@ -120,18 +120,11 @@ public class TransactionsController : ControllerBase
         }
     }
 
-    /// <summary>
-    ///     Returns <c>true</c> when the exception is a transient database error that
-    ///     should be retried (e.g. SQLite "database is locked" under concurrent load).
-    /// </summary>
     private static bool IsTransient(Exception ex) =>
         ex is DbUpdateException
         || ex is SqliteException
         || (ex is InvalidOperationException
             && (ex.Message.Contains("database is locked", StringComparison.OrdinalIgnoreCase)
                 || ex.Message.Contains("SQLite Error 5", StringComparison.OrdinalIgnoreCase)
-                || ex.Message.Contains("was not disposed", StringComparison.OrdinalIgnoreCase)))
-        || (ex is SqliteException
-            && (ex.Message.Contains("unable to delete/modify", StringComparison.OrdinalIgnoreCase)
-                || ex.Message.Contains("another row available", StringComparison.OrdinalIgnoreCase)));
+                || ex.Message.Contains("was not disposed", StringComparison.OrdinalIgnoreCase)));
 }

@@ -1,16 +1,7 @@
 #!/bin/sh
 set -e
 
-# ---------------------------------------------------------------------------
-# docker-entrypoint.sh — Frontend container entrypoint
-#
-# Generates /usr/share/nginx/html/config.js from the VITE_API_URL environment
-# variable (or falls back to an empty string), then starts nginx.
-#
-# This allows a single frontend Docker image to work with any backend URL
-# without rebuilding the JavaScript bundle.
-# ---------------------------------------------------------------------------
-
+# Runtime config injection from VITE_API_URL env var
 CONFIG_FILE=/usr/share/nginx/html/config.js
 
 cat > "$CONFIG_FILE" <<EOF
