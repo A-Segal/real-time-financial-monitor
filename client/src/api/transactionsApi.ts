@@ -1,7 +1,14 @@
 import { isTransactionStatus } from '../types/transaction'
 import type { Transaction, TransactionStatus } from '../types/transaction'
 
-const API_BASE = '/api'
+function apiBaseUrl(): string {
+  return import.meta.env.VITE_API_URL ?? ''
+}
+
+function apiUrl(path: string): string {
+  const base = apiBaseUrl().replace(/\/+$/, '')
+  return `${base}${path}`
+}
 
 export class ApiError extends Error {
   readonly status: number | undefined
@@ -22,7 +29,7 @@ export interface CreateTransactionInput {
 export async function fetchTransactions(): Promise<Transaction[]> {
   let response: Response
   try {
-    response = await fetch(`${API_BASE}/transactions`)
+    response = await fetch(apiUrl('/api/transactions'))
   } catch {
     throw new ApiError(
       'Unable to reach the server. Please verify the API is running and check your connection.',
@@ -52,7 +59,7 @@ export async function createTransaction(
 ): Promise<Transaction> {
   let response: Response
   try {
-    response = await fetch(`${API_BASE}/transactions`, {
+    response = await fetch(apiUrl('/api/transactions'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(input),
@@ -87,7 +94,7 @@ export async function updateTransactionStatus(
 ): Promise<void> {
   let response: Response
   try {
-    response = await fetch(`${API_BASE}/transactions/${transactionId}/status`, {
+    response = await fetch(apiUrl(`/api/transactions/${transactionId}/status`), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),

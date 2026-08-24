@@ -34,6 +34,17 @@ else
     builder.Services.AddSignalR();
 }
 
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials()
+              .SetIsOriginAllowed(_ => true);
+    });
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -51,6 +62,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors();
+
 app.UseHttpsRedirection();
 
 app.MapControllers();
@@ -59,12 +72,6 @@ app.MapHub<FinancialMonitor.Api.Hubs.TransactionHub>("/hubs/transactions");
 
 app.Run();
 
-/// <summary>
-///     Partial declaration of <c>Program</c> so the web application factory
-///     (<c>WebApplicationFactory&lt;Program&gt;</c>) used by the integration tests can
-///     reference the real application entry point. This is the standard ASP.NET Core
-///     pattern for spinning up the real host inside tests.
-/// </summary>
 public partial class Program
 {
 }
